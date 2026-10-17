@@ -7,8 +7,10 @@ The content side of lineage, from a Payload config, as two pages in the admin:
   `block:mediaBlock` → `pages`. Hover a node to trace everything upstream and downstream; click it
   for the fields behind each link.
 - **Data model** (`/admin/lineage/schema`): an ERD, with a table per collection and global listing
-  its fields, and a line from each field that references another collection. `N:1` is one
-  reference per document, `N:M` a list (`hasMany`, or inside an array or blocks field).
+  its fields, and a line from each field that references another collection, labelled
+  `many-to-one` (one reference per document, which many documents can share), `many-to-many` (a
+  list: `hasMany`, or inside an array or blocks field) or `one-to-one` (a `unique` reference). A
+  global is a single document, so its references are `one-to-one` or `one-to-many`.
 
 Both are built from the running config on each visit (well under a millisecond), so they are never
 out of date. They're for logged-in users, and show only the collections and globals the user can

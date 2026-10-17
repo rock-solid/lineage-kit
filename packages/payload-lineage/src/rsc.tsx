@@ -62,7 +62,7 @@ export function SchemaView({ graphOptions, ...props }: LineageViewProps) {
       {...props}
       current="/lineage/schema"
       title="Data model"
-      intro="Each collection and global with its fields, and the fields that reference other collections. N:1 is one reference per document, N:M a list of them."
+      intro="Each collection and global with its fields, and the fields that reference other collections. Each line says how many of one the other can reference: many-to-one, many-to-many or one-to-one."
     >
       <ErdCanvas schema={schema} adminURLs={adminURLs(props, schema.entities)} />
     </Page>

@@ -20,6 +20,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import type { Schema, SchemaEntity, SchemaField } from '../schema';
 import {
+  describeCardinality,
   erdEdges,
   erdLayoutInput,
   selfReferences,
@@ -285,12 +286,20 @@ const Details: React.FC<{
         </p>
         <dl className="rs-lineage__legend">
           <div>
-            <dt className="rs-erd__key">N:1</dt>
-            <dd>one reference per document</dd>
+            <dt className="rs-erd__key">many-to-one</dt>
+            <dd>each document references one; many can share it</dd>
           </div>
           <div>
-            <dt className="rs-erd__key">N:M</dt>
-            <dd>a list: hasMany, or inside an array or blocks</dd>
+            <dt className="rs-erd__key">many-to-many</dt>
+            <dd>a list of references: hasMany, or inside an array or blocks</dd>
+          </div>
+          <div>
+            <dt className="rs-erd__key">one-to-one</dt>
+            <dd>a unique reference, or a global's single one</dd>
+          </div>
+          <div>
+            <dt className="rs-erd__key">one-to-many</dt>
+            <dd>a global's list of references</dd>
           </div>
           <div>
             <dt className="rs-erd__key">↻</dt>
@@ -309,13 +318,18 @@ const Details: React.FC<{
   const url = adminURLs[entity.id];
   const item = (line: ErdEdge, otherId: string) => {
     const other = byId.get(otherId)!;
+    const from = byId.get(line.from)!;
+    const to = byId.get(line.to)!;
     return (
       <li key={line.id}>
         <button type="button" className="rs-lineage__link" onClick={() => onSelect(other.id)}>
           <span className="rs-lineage__link-name">
             <span className={`rs-lineage__swatch rs-lineage__swatch--${other.kind}`} />
             {other.label}
-            <span className="rs-erd__key">{line.cardinality}</span>
+            <span className="rs-erd__cardinality-tag">{line.cardinality}</span>
+          </span>
+          <span className="rs-erd__sentence">
+            {describeCardinality(line.cardinality, from, to)}
           </span>
           <span className="rs-lineage__via">{line.relations.map((r) => r.path).join(', ')}</span>
         </button>

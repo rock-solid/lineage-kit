@@ -24,7 +24,10 @@ export type SchemaEntity = {
   id: string;
   kind: 'collection' | 'global';
   slug: string;
+  /** Plural for a collection (`Pages`), the global's name for a global. */
   label: string;
+  /** One document: `Page`. A global's name, since it is one already. */
+  singular: string;
   /** An auth collection (users) or an upload collection (media). */
   auth?: boolean;
   upload?: boolean;
@@ -45,6 +48,8 @@ export type SchemaRelation = {
   many: boolean;
   /** The field can point at more than one collection. */
   polymorphic: boolean;
+  /** No two documents may reference the same one: a `unique` field. */
+  unique: boolean;
 };
 
 export type Schema = { entities: SchemaEntity[]; relations: SchemaRelation[] };
@@ -68,7 +73,7 @@ type FieldLike = {
 type EntityLike = {
   slug: string;
   label?: unknown;
-  labels?: { plural?: unknown };
+  labels?: { singular?: unknown; plural?: unknown };
   auth?: unknown;
   upload?: unknown;
   fields: FieldLike[];
@@ -176,6 +181,7 @@ export function buildSchema(
               kind: field.type,
               many: many || !!field.hasMany,
               polymorphic: to.length > 1,
+              unique: !!field.unique,
             });
           }
         }
@@ -195,6 +201,7 @@ export function buildSchema(
       kind,
       slug: e.slug,
       label: labelOf(e, kind === 'collection' ? e.labels?.plural : e.label),
+      singular: labelOf(e, kind === 'collection' ? e.labels?.singular : e.label),
       ...(kind === 'collection' && e.auth ? { auth: true } : {}),
       ...(kind === 'collection' && e.upload ? { upload: true } : {}),
       fields,

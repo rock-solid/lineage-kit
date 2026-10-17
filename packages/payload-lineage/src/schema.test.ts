@@ -18,7 +18,7 @@ const config = {
   collections: [
     {
       slug: 'pages',
-      labels: { plural: 'Pages' },
+      labels: { singular: 'Page', plural: 'Pages' },
       fields: [
         { name: 'title', type: 'text', required: true, localized: true },
         {
@@ -93,6 +93,14 @@ describe('buildSchema', () => {
       'collection:users',
       'global:header',
     ]);
+    expect(entities.find((e) => e.id === 'collection:pages')).toMatchObject({
+      label: 'Pages',
+      singular: 'Page',
+    });
+    expect(entities.find((e) => e.id === 'global:header')).toMatchObject({
+      label: 'Header',
+      singular: 'Header',
+    });
     expect(entities.find((e) => e.id === 'collection:media')).toMatchObject({ upload: true });
     expect(entities.find((e) => e.id === 'collection:users')).toMatchObject({ auth: true });
   });
@@ -123,6 +131,7 @@ describe('buildSchema', () => {
       kind: 'upload',
       many: true,
       polymorphic: false,
+      unique: false,
     });
     expect(relations).toContainEqual(
       expect.objectContaining({
