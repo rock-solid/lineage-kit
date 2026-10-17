@@ -1,6 +1,6 @@
 # Example: Payload
 
-A minimal Payload 3 app with `@rock-solid/payload-lineage`, for developing the plugin and trying it
+A minimal Payload 3 app with `@rocksoliddigital/payload-lineage`, for developing the plugin and trying it
 out. It stores everything in a SQLite file (`example.db`), so it needs no database server.
 
 From the repo root:

@@ -1,4 +1,4 @@
-# 🧬 @rock-solid/storybook-addon-lineage
+# 🧬 @rocksoliddigital/storybook-addon-lineage
 
 A dbt-style lineage graph of your components in Storybook. Every file in your source folder is a
 node and every import an edge, read left to right from what a file is built with to where it is
@@ -52,23 +52,15 @@ Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vit
 
 ## 📥 Install
 
-The package is on GitHub Packages for now. Point the `@rock-solid` scope at it in the project's
-`.npmrc`:
-
-```ini
-@rock-solid:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-`GITHUB_TOKEN` needs `read:packages` (locally, a personal access token; in GitHub Actions, the
-workflow token, once the package grants the repository access). Then:
-
 ```sh
-pnpm add -D @rock-solid/storybook-addon-lineage
+pnpm add -D @rocksoliddigital/storybook-addon-lineage
 ```
+
+Versions up to 0.1.1 were published to GitHub Packages only, as `@rock-solid/storybook-addon-lineage`;
+later ones are on npmjs.com under this name.
 
 If the project sets pnpm's `minimumReleaseAge`, a new version can't be installed until it's that
-old; exempt the scope with `minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`.
+old; exempt the scope with `minimumReleaseAgeExclude: ['@rocksoliddigital/*']` in `pnpm-workspace.yaml`.
 
 ## ⚙️ Set up
 
@@ -82,7 +74,7 @@ const config: StorybookConfig = {
   addons: [
     '@storybook/addon-docs',
     {
-      name: '@rock-solid/storybook-addon-lineage',
+      name: '@rocksoliddigital/storybook-addon-lineage',
       options: {
         layers: [
           {

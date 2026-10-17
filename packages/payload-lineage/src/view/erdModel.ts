@@ -1,6 +1,6 @@
 // What the ERD shows of a schema, kept free of React so it can be tested on its own.
 
-import type { LayoutOptions } from '@rock-solid/lineage-core';
+import type { LayoutOptions } from '@rocksoliddigital/lineage-core';
 
 import type { Schema, SchemaEntity, SchemaField, SchemaRelation } from '../schema';
 

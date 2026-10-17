@@ -1,5 +1,5 @@
 {
-  "name": "@rock-solid/payload-lineage",
+  "name": "@rocksoliddigital/payload-lineage",
   "version": "0.0.0",
   "description": "Lineage and data model (ERD) pages for the Payload admin: the collections, globals and blocks, and the fields that link them.",
   "keywords": [
@@ -53,7 +53,7 @@
   "devDependencies": {
     "@payloadcms/next": "3.90.2",
     "@payloadcms/ui": "3.90.2",
-    "@rock-solid/lineage-core": "workspace:*",
+    "@rocksoliddigital/lineage-core": "workspace:*",
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
@@ -75,6 +75,6 @@
     "react-dom": "^19.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   }
 }

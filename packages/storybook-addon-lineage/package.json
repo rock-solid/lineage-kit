@@ -1,5 +1,5 @@
 {
-  "name": "@rock-solid/storybook-addon-lineage",
+  "name": "@rocksoliddigital/storybook-addon-lineage",
   "version": "0.1.1",
   "description": "A dbt-style lineage graph of your components in Storybook: what each file is built with, where it is used, and what a change affects.",
   "keywords": [
@@ -45,7 +45,7 @@
     "elkjs": "0.12.0"
   },
   "devDependencies": {
-    "@rock-solid/lineage-core": "workspace:*",
+    "@rocksoliddigital/lineage-core": "workspace:*",
     "@storybook/react": "10.6.1",
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
@@ -60,7 +60,7 @@
     "storybook": "^10.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "storybook": {
     "displayName": "Lineage",

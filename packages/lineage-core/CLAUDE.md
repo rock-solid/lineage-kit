@@ -1,4 +1,4 @@
-# @rock-solid/lineage-core
+# @rocksoliddigital/lineage-core
 
 What the Storybook addon and the Payload plugin share: walking a graph's links (`src/traverse.ts`),
 laying it out with ELK (`src/layout.ts`) and the React hook that runs the layout (`src/react.ts`).

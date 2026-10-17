@@ -15,8 +15,8 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { trace } from '@rock-solid/lineage-core';
-import { useLayout } from '@rock-solid/lineage-core/react';
+import { trace } from '@rocksoliddigital/lineage-core';
+import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';

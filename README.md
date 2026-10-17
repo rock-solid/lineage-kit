@@ -5,10 +5,10 @@ used, and what a change affects.
 
 ## 📦 Packages
 
-| Package                                                                   | Status |                                                                                                                       |
-| ------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| [`@rock-solid/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1    | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
-| [`@rock-solid/payload-lineage`](packages/payload-lineage)                 | 0.0    | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
+| Package                                                                         | Status |                                                                                                                       |
+| ------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| [`@rocksoliddigital/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1    | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
+| [`@rocksoliddigital/payload-lineage`](packages/payload-lineage)                 | 0.0    | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
 
 ## 🚀 Quick start
 
@@ -52,18 +52,18 @@ Either way, setup installs the dependencies, the git hooks and the Chromium the 
 
 Every mise task is an alias over a pnpm script, so both columns run the same thing.
 
-| Script             | mise                | What it does                                                                                                        |
-| ------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `pnpm run setup`   | `mise setup`        | One-time setup: dependencies, git hooks, test browser                                                               |
-| `pnpm dev`         | `mise dev`          | Builds the packages in watch mode and starts the example Storybook at http://localhost:6006                         |
-| `pnpm dev:payload` | `mise dev-payload`  | Builds the packages in watch mode and starts the example Payload admin at http://localhost:3000/admin               |
-| `pnpm build`       | `mise build`        | Builds the packages to `dist/`                                                                                      |
-| `pnpm test`        | `mise test`         | Every package's unit tests, the Payload example's config test, and the example Storybook's stories as browser tests |
-| `pnpm lint`        | `mise lint`         | ESLint                                                                                                              |
-| `pnpm typecheck`   | `mise typecheck`    | TypeScript, every package                                                                                           |
-| `pnpm format`      | `mise format`       | Prettier                                                                                                            |
-| `pnpm check`       | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build                             |
-| `pnpm release …`   | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                                           |
+| Script             | mise               | What it does                                                                                                        |
+| ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm run setup`   | `mise setup`       | One-time setup: dependencies, git hooks, test browser                                                               |
+| `pnpm dev`         | `mise dev`         | Builds the packages in watch mode and starts the example Storybook at http://localhost:6006                         |
+| `pnpm dev:payload` | `mise dev-payload` | Builds the packages in watch mode and starts the example Payload admin at http://localhost:3000/admin               |
+| `pnpm build`       | `mise build`       | Builds the packages to `dist/`                                                                                      |
+| `pnpm test`        | `mise test`        | Every package's unit tests, the Payload example's config test, and the example Storybook's stories as browser tests |
+| `pnpm lint`        | `mise lint`        | ESLint                                                                                                              |
+| `pnpm typecheck`   | `mise typecheck`   | TypeScript, every package                                                                                           |
+| `pnpm format`      | `mise format`      | Prettier                                                                                                            |
+| `pnpm check`       | `mise check`       | Everything CI checks: format, build, lint, types, tests and the example Storybook build                             |
+| `pnpm changeset`   | `mise changeset`   | Adds a changeset for a release: see [Releasing](#-releasing)                                                        |
 
 ### 🗂️ Project layout
 
@@ -84,7 +84,7 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
   Lineage in the nav. Its `src/lineage.test.ts` checks the plugin against this real config.
 - `examples/react`: a small Storybook that installs the addon from the workspace. Develop against
   it; its `src/lineage.test.stories.tsx` tests the viewer on fixture graphs.
-- `scripts/release.mjs`: the release script.
+- `.changeset/`: the changesets waiting for the next release, and their config.
 
 ### ✅ Pull requests
 
@@ -93,7 +93,9 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
 3. Add or update a test for any behaviour you change. Package tests are Vitest files next to the
    code (`src/**/*.test.ts`); the Storybook viewer's are stories with play functions in
    `examples/react/src/lineage.test.stories.tsx`.
-4. Fill in the PR template; the test plan matters most.
+4. If it changes what a package does, add a changeset: `pnpm changeset` (see
+   [Releasing](#-releasing)).
+5. Fill in the PR template; the test plan matters most.
 
 Commit messages and PR titles follow [Conventional Commits](https://www.conventionalcommits.org),
 e.g. `feat: add a dark theme` or `fix(storybook): keep the focus after a rebuild`. A git hook
@@ -102,24 +104,33 @@ commit on `main`.
 
 ## 📤 Releasing
 
-For maintainers. `main` only takes changes through a PR, so a release has two steps:
+Releases use [Changesets](https://github.com/changesets/changesets). The two published packages
+share one version and are always released together, so `0.2.0` of the addon goes with `0.2.0` of
+the plugin. A PR that changes what a package does adds a changeset:
 
 ```sh
-pnpm release prepare minor   # or patch, major, or an exact version such as 1.0.0
+pnpm changeset   # pick the packages and the bump, then write the changelog line
 ```
 
-This bumps the version on a `release/…` branch and opens its PR, listing the package's changes
-since its last release. Once that PR is merged:
+That adds a file under `.changeset/` to commit with the PR. `packages/lineage-core` is built into
+both published packages, so a change there names the packages it changes. Docs, tests and CI need
+none.
 
-```sh
-git switch main && git pull
-pnpm release tag
-```
+Once changesets reach `main`, the Release workflow opens a **Version Packages** PR, and keeps it up
+to date: it bumps the versions and writes each package's `CHANGELOG.md`. Merging it publishes the
+new versions to npmjs.com with provenance, tags them (e.g. `@rocksoliddigital/payload-lineage@0.2.0`) and
+creates their GitHub Releases. GitHub doesn't let a PR the workflow opens start other workflows, so
+close and reopen the Version Packages PR to run its checks. For a prerelease, see Changesets'
+[prerelease guide](https://github.com/changesets/changesets/blob/main/docs/prereleases.md).
 
-That tags `main` as `<package>@<version>`, e.g. `storybook-addon-lineage@0.2.0`. The Release
-workflow checks the tag matches the version, publishes the package to GitHub Packages and creates a
-GitHub Release with notes from the merged PRs. Add `--dry-run` to either step to see what it would
-do, and `--package <name>` once the repo has more than one package.
+**Setting up publishing, once:**
+
+- In the repo's Settings → Actions → General, allow GitHub Actions to create and approve pull
+  requests, so the workflow can open the Version Packages PR.
+- On npmjs.com, add the Release workflow (`rock-solid/lineage-kit`, `release.yml`) as each package's
+  trusted publisher; publishing then needs no token. If npm won't take a trusted publisher before a
+  package's first version, publish that version once by hand from `main` after merging the Version
+  Packages PR: `pnpm build && pnpm changeset publish`.
 
 ## 📄 License
 

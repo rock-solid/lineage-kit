@@ -10,7 +10,7 @@ next, known issues and limitations. Commit, PR and hook rules are in
 - `pnpm run setup` once (not `pnpm setup`, which is pnpm's own command).
 - `pnpm check` before pushing: format, build, lint, types, tests and the Storybook build, as CI.
 - `pnpm dev` (Storybook at :6006) or `pnpm dev:payload` (Payload admin at :3000/admin).
-- Filter by package name: `pnpm --filter @rock-solid/payload-lineage test`, `--filter example`
+- Filter by package name: `pnpm --filter @rocksoliddigital/payload-lineage test`, `--filter example`
   (Storybook), `--filter example-payload` (Payload).
 
 ## Packages

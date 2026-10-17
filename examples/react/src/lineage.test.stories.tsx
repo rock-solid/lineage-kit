@@ -1,5 +1,5 @@
-import type { LineageGraphData } from '@rock-solid/storybook-addon-lineage';
-import { LineageGraph } from '@rock-solid/storybook-addon-lineage';
+import type { LineageGraphData } from '@rocksoliddigital/storybook-addon-lineage';
+import { LineageGraph } from '@rocksoliddigital/storybook-addon-lineage';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, waitFor } from 'storybook/test';

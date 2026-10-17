@@ -1,5 +1,5 @@
 {
-  "name": "@rock-solid/lineage-core",
+  "name": "@rocksoliddigital/lineage-core",
   "version": "0.0.0",
   "private": true,
   "description": "What the Storybook addon and the Payload plugin share: walking a graph's links, and laying it out with ELK. Not published; each package's build includes it.",

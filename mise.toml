@@ -5,7 +5,7 @@ pnpm = "12.8.1"
 
 # Tasks are thin aliases over the pnpm scripts in package.json, so non-mise users get the same
 # commands via `pnpm <script>`. Avoid task names that are mise built-ins (install, test-tool, fmt,
-# ...): `mise <name>` runs the built-in. Pass arguments after `--`: `mise release -- prepare minor`.
+# ...): `mise <name>` runs the built-in. Pass arguments after `--`: `mise changeset -- --empty`.
 [tasks.setup]
 description = "One-time setup for a fresh clone: dependencies, git hooks and the test browser"
 run = "pnpm run setup"
@@ -42,6 +42,6 @@ run = "pnpm format"
 description = "Everything CI checks: format, build, lint, types, tests and the example Storybook build"
 run = "pnpm check"
 
-[tasks.release]
-description = "Release a package: `-- prepare <patch|minor|major|x.y.z>`, then `-- tag` after its PR merges"
-run = "pnpm release"
+[tasks.changeset]
+description = "Add a changeset: which packages a change releases, how big a bump, and its changelog line"
+run = "pnpm changeset"

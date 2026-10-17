@@ -6,7 +6,7 @@ const config: StorybookConfig = {
     '@storybook/addon-docs',
     '@storybook/addon-a11y',
     {
-      name: '@rock-solid/storybook-addon-lineage',
+      name: '@rocksoliddigital/storybook-addon-lineage',
       options: {
         layers: [
           {

@@ -15,7 +15,7 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { useLayout } from '@rock-solid/lineage-core/react';
+import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Schema, SchemaEntity, SchemaField } from '../schema';

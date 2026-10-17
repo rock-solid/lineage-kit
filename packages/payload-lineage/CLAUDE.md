@@ -1,4 +1,4 @@
-# @rock-solid/payload-lineage
+# @rocksoliddigital/payload-lineage
 
 The Payload plugin: the Lineage and Data model pages in the admin. Users' docs: [README.md](README.md).
 

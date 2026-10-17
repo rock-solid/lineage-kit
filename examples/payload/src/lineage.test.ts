@@ -1,4 +1,4 @@
-import { buildContentGraph, buildSchema } from '@rock-solid/payload-lineage';
+import { buildContentGraph, buildSchema } from '@rocksoliddigital/payload-lineage';
 import { describe, expect, it } from 'vitest';
 
 import configPromise from './payload.config';
