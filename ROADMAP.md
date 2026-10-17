@@ -16,9 +16,9 @@ open an issue to suggest or question anything here.
 
 ### 🚀 Now
 
-- **Go public on npmjs.com.** Releases already use Changesets and publish there with trusted
-  publishing; what's left: the `@rocksoliddigital` org on npmjs.com, a trusted publisher for each package,
-  the repo made public, then merging the first Version Packages PR (see the README's
+- **Go public on npmjs.com.** Releases use Changesets and publish there under the
+  `@rocksoliddigital` org with trusted publishing. What's left: a trusted publisher for each
+  package, the repo made public, then merging the first Version Packages PR (see the README's
   [Releasing](README.md#-releasing)).
 
 ### ⏭️ Next
