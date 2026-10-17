@@ -92,6 +92,16 @@ describe('visibleRows', () => {
     expect(hidden).toBe(entity.fields.length - ROW_LIMIT);
   });
 
+  it('keeps a collection’s own id field with keysOnly', () => {
+    const custom: SchemaEntity = {
+      ...entity,
+      fields: [{ name: 'id', type: 'text' }, ...many],
+    };
+    expect(visibleRows(custom, [], { keysOnly: true, expanded: false }).rows).toEqual([
+      { name: 'id', type: 'text' },
+    ]);
+  });
+
   it('shows everything when expanded, and only the keys with keysOnly', () => {
     expect(visibleRows(entity, own, { keysOnly: false, expanded: true }).hidden).toBe(0);
     expect(

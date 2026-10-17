@@ -101,7 +101,9 @@ export function visibleRows(
   { keysOnly, expanded }: RowFilter,
 ): { rows: SchemaField[]; hidden: number } {
   const linked = new Set(relations.filter((r) => r.from === entity.id).map((r) => r.field));
-  const isKey = (f: SchemaField) => f.type === 'id' || linked.has(f.name) || f.type === 'join';
+  // `id` by name too, for a collection that defines its own (`type: 'text'`)
+  const isKey = (f: SchemaField) =>
+    f.type === 'id' || f.name === 'id' || linked.has(f.name) || f.type === 'join';
   if (keysOnly) {
     const rows = entity.fields.filter(isKey);
     return { rows, hidden: entity.fields.length - rows.length };

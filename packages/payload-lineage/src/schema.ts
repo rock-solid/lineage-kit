@@ -54,6 +54,7 @@ export type SchemaRelation = {
 
 export type Schema = { entities: SchemaEntity[]; relations: SchemaRelation[] };
 
+type BlockLike = { slug: string; fields: FieldLike[] };
 type FieldLike = {
   type: string;
   name?: string;
@@ -65,8 +66,8 @@ type FieldLike = {
   unique?: boolean;
   fields?: FieldLike[];
   tabs?: { name?: string; fields: FieldLike[] }[];
-  blocks?: { slug: string; fields: FieldLike[] }[];
-  blockReferences?: (string | { slug: string; fields: FieldLike[] })[];
+  blocks?: BlockLike[];
+  blockReferences?: (string | BlockLike)[];
   relationTo?: string | string[];
   collection?: string | string[];
 };
@@ -81,10 +82,11 @@ type EntityLike = {
 type ConfigLike = {
   collections?: EntityLike[];
   globals?: EntityLike[];
-  blocks?: { slug: string; fields: FieldLike[] }[];
+  blocks?: BlockLike[];
 };
 
-const INTERNAL_SLUG = /^payload-/;
+// Payload adds these collections to every sanitized config; it adds no globals or blocks
+const INTERNAL_COLLECTION = /^payload-/;
 // Lay fields out without storing anything under their own name
 const LAYOUT = new Set(['row', 'collapsible']);
 
@@ -95,7 +97,9 @@ export function buildSchema(
 ): Schema {
   const { collections = [], globals = [], blocks = [] } = config as ConfigLike;
   const excluded = (kind: string, slug: string) =>
-    INTERNAL_SLUG.test(slug) || exclude.includes(slug) || exclude.includes(`${kind}:${slug}`);
+    (kind === 'collection' && INTERNAL_COLLECTION.test(slug)) ||
+    exclude.includes(slug) ||
+    exclude.includes(`${kind}:${slug}`);
   const shownCollections = collections.filter((c) => !excluded('collection', c.slug));
   const shownGlobals = globals.filter((g) => !excluded('global', g.slug));
   const targets = new Set(shownCollections.map((c) => c.slug));
@@ -105,8 +109,10 @@ export function buildSchema(
 
   const entity = (kind: 'collection' | 'global', e: EntityLike): SchemaEntity => {
     const id = `${kind}:${e.slug}`;
-    const fields: SchemaField[] =
-      kind === 'collection' ? [{ name: 'id', type: 'id', required: true }] : [];
+    const fields: SchemaField[] = [];
+    // Blocks on the way to the current field, so a block that contains itself (directly, or A in B
+    // in A) stops there; the same block in another field is walked again
+    const onPath = new Set<BlockLike>();
 
     /**
      * `row` is the array or blocks field the walk is inside, if any: nested fields don't get rows of
@@ -142,7 +148,7 @@ export function buildSchema(
             ...(field.blockReferences ?? []).map((b) =>
               typeof b === 'string' ? sharedBlocks.get(b) : b,
             ),
-          ].filter((b) => b !== undefined);
+          ].filter((b): b is BlockLike => b !== undefined && !excluded('block', b.slug));
           const own =
             row ??
             add({
@@ -151,7 +157,12 @@ export function buildSchema(
               required: field.required,
               blocks: allowed.map((b) => b.slug),
             });
-          for (const block of allowed) walk(block.fields, `${name}[${block.slug}]`, own, true);
+          for (const block of allowed) {
+            if (onPath.has(block)) continue;
+            onPath.add(block);
+            walk(block.fields, `${name}[${block.slug}]`, own, true);
+            onPath.delete(block);
+          }
           continue;
         }
 
@@ -196,6 +207,10 @@ export function buildSchema(
     };
 
     walk(e.fields, '', null, false);
+    // Payload gives every collection an `id`; one the config defines itself is already a row
+    if (kind === 'collection' && !fields.some((f) => f.name === 'id')) {
+      fields.unshift({ name: 'id', type: 'id', required: true });
+    }
     return {
       id,
       kind,

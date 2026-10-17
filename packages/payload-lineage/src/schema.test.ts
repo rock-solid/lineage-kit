@@ -182,4 +182,114 @@ describe('buildSchema', () => {
     expect(schema.entities.map((e) => e.id)).not.toContain('collection:media');
     expect(schema.relations.some((r) => r.to === 'collection:media')).toBe(false);
   });
+
+  it('stops at a block that contains itself, directly or through another block', () => {
+    const self = {
+      blocks: [
+        {
+          slug: 'section',
+          fields: [{ name: 'children', type: 'blocks', blockReferences: ['section'] }],
+        },
+      ],
+      collections: [
+        {
+          slug: 'pages',
+          fields: [{ name: 'layout', type: 'blocks', blockReferences: ['section'] }],
+        },
+      ],
+    } as unknown as PayloadConfigLike;
+    const cycle = {
+      blocks: [
+        {
+          slug: 'a',
+          fields: [
+            { name: 'b', type: 'blocks', blockReferences: ['b'] },
+            { name: 'img', type: 'upload', relationTo: 'media' },
+          ],
+        },
+        { slug: 'b', fields: [{ name: 'a', type: 'blocks', blockReferences: ['a'] }] },
+      ],
+      collections: [
+        { slug: 'pages', fields: [{ name: 'layout', type: 'blocks', blockReferences: ['a'] }] },
+        { slug: 'media', fields: [] },
+      ],
+    } as unknown as PayloadConfigLike;
+    expect(buildSchema(self).entities[0].fields.map((f) => f.name)).toEqual(['id', 'layout']);
+    // pages → a → b → a stops at the second a, which is already on the path
+    expect(buildSchema(cycle).relations.map((r) => r.path)).toEqual(['layout[a].img']);
+  });
+
+  it('walks a block again in another field when it isn’t a loop', () => {
+    const reused = {
+      blocks: [
+        { slug: 'media', fields: [{ name: 'file', type: 'upload', relationTo: 'uploads' }] },
+      ],
+      collections: [
+        {
+          slug: 'pages',
+          fields: [
+            { name: 'hero', type: 'blocks', blockReferences: ['media'] },
+            { name: 'layout', type: 'blocks', blockReferences: ['media'] },
+          ],
+        },
+        { slug: 'uploads', fields: [] },
+      ],
+    } as unknown as PayloadConfigLike;
+    expect(buildSchema(reused).relations.map((r) => r.path)).toEqual([
+      'hero[media].file',
+      'layout[media].file',
+    ]);
+  });
+
+  it('keeps a collection’s own id field instead of adding one', () => {
+    const custom = {
+      collections: [
+        {
+          slug: 'hotels',
+          fields: [
+            { name: 'id', type: 'text', required: true },
+            { name: 'name', type: 'text' },
+          ],
+        },
+      ],
+    } as unknown as PayloadConfigLike;
+    expect(buildSchema(custom).entities[0].fields).toEqual([
+      { name: 'id', type: 'text', required: true },
+      { name: 'name', type: 'text' },
+    ]);
+  });
+
+  it('leaves an excluded block out of the row and its references out of the relations', () => {
+    const schema = buildSchema(config, { exclude: ['block:mediaBlock'] });
+    expect(schema.entities[0].fields.find((f) => f.name === 'layout')).toEqual({
+      name: 'layout',
+      type: 'blocks',
+      blocks: ['cta'],
+    });
+    expect(schema.relations.some((r) => r.path.startsWith('layout[mediaBlock]'))).toBe(false);
+  });
+
+  it('leaves out only Payload’s own collections, not globals or blocks that start with payload-', () => {
+    const prefixed = {
+      blocks: [{ slug: 'payload-hero', fields: [] }],
+      collections: [
+        { slug: 'payload-preferences', fields: [] },
+        {
+          slug: 'pages',
+          fields: [{ name: 'layout', type: 'blocks', blockReferences: ['payload-hero'] }],
+        },
+      ],
+      globals: [{ slug: 'payload-settings', fields: [] }],
+    } as unknown as PayloadConfigLike;
+    const schema = buildSchema(prefixed);
+    expect(schema.entities.map((e) => e.id)).toEqual([
+      'collection:pages',
+      'global:payload-settings',
+    ]);
+    expect(schema.entities[0].fields).toContainEqual({
+      name: 'layout',
+      type: 'blocks',
+      blocks: ['payload-hero'],
+    });
+  });
 });
