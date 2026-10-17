@@ -55,7 +55,16 @@ describe('lineagePlugin', () => {
           path: '@rock-solid/payload-lineage/rsc#LineageView',
           serverProps: { graphOptions: { exclude: ['block:text'] } },
         },
+        exact: true,
         path: '/lineage',
+      },
+      lineageSchema: {
+        Component: {
+          path: '@rock-solid/payload-lineage/rsc#SchemaView',
+          serverProps: { graphOptions: { exclude: ['block:text'] } },
+        },
+        exact: true,
+        path: '/lineage/schema',
       },
     });
     // No output file, so nothing runs on init

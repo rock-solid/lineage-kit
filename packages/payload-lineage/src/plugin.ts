@@ -39,9 +39,16 @@ function withAdminView(config: Config, graphOptions: ContentGraphOptions): Confi
         afterNavLinks: [...(components?.afterNavLinks ?? []), `${PACKAGE}/client#LineageNavLink`],
         views: {
           ...components?.views,
+          // Exact, so `/lineage` doesn't also match the data model below it
           lineage: {
             Component: { path: `${PACKAGE}/rsc#LineageView`, serverProps: { graphOptions } },
+            exact: true,
             path: '/lineage',
+          },
+          lineageSchema: {
+            Component: { path: `${PACKAGE}/rsc#SchemaView`, serverProps: { graphOptions } },
+            exact: true,
+            path: '/lineage/schema',
           },
         },
       },
