@@ -10,7 +10,7 @@ changes as we learn; open an issue to suggest or question anything here.
 | Package                               | Version                             |                                        |
 | ------------------------------------- | ----------------------------------- | -------------------------------------- |
 | `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial |
-| `@rock-solid/payload-plugin-lineage`  | Not started                         | See [Later](#-later)                   |
+| `@rock-solid/payload-lineage`         | In progress, not published          | See [Later](#-later)                   |
 
 ## 🚀 Now
 
@@ -33,7 +33,7 @@ changes as we learn; open an issue to suggest or question anything here.
 
 ## 🔭 Later
 
-- **`@rock-solid/payload-plugin-lineage`:** the content side of lineage, from a Payload config.
+- **`@rock-solid/payload-lineage`:** the content side of lineage, from a Payload config.
   - Collections, globals and blocks as nodes, with `relationship` and `upload` fields as edges.
   - Which pages use which blocks, from the documents themselves.
   - Which blocks and collections use each shared field config (found by import scan, since Payload
