@@ -1,13 +1,14 @@
 name: Release
 
-# Tag a version to publish it: `git tag storybook-addon-lineage@0.1.0 && git push --tags`. The tag
-# must match the package's version.
+# Publishes a package when its version is tagged, e.g. `storybook-addon-lineage@0.2.0`. Tag with
+# `pnpm release tag` (see the README); the tag must match the package's version.
 on:
   push:
     tags: ['storybook-addon-lineage@*']
 
 permissions:
-  contents: read
+  # contents: write for the GitHub Release
+  contents: write
   packages: write
 
 jobs:
@@ -16,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # All tags, to find the package's previous release for the notes
+          fetch-depth: 0
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -37,3 +41,14 @@ jobs:
         run: pnpm --filter @rock-solid/storybook-addon-lineage publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: GitHub Release
+        # Notes from the PRs merged since the package's previous release: the nearest earlier tag in
+        # this tag's history, not the second-highest, which a later release (or hotfix) would break.
+        # `|| true`: a first release has none.
+        run: |
+          package="${GITHUB_REF_NAME%@*}"
+          previous="$(git describe --tags --abbrev=0 --match "${package}@*" "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes \
+            ${previous:+--notes-start-tag "$previous"}
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,4 +1,4 @@
-# @rock-solid/storybook-addon-lineage
+# 🧬 @rock-solid/storybook-addon-lineage
 
 A dbt-style lineage graph of your components in Storybook. Every file in your source folder is a
 node and every import an edge, read left to right from what a file is built with to where it is
@@ -16,7 +16,7 @@ used.
 
 Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vite`) and React 18 or 19.
 
-## Install
+## 📥 Install
 
 The package is on GitHub Packages for now. Point the `@rock-solid` scope at it in the project's
 `.npmrc`:
@@ -33,7 +33,7 @@ workflow token, once the package grants the repository access). Then:
 pnpm add -D @rock-solid/storybook-addon-lineage
 ```
 
-## Set up
+## ⚙️ Set up
 
 Add it to `.storybook/main.ts`. The options are optional; without them every file in `src` is one
 blue layer.
@@ -74,7 +74,7 @@ const config: StorybookConfig = {
 The addon adds the **Lineage** page to the sidebar and the toolbar button; there's no story file to
 write.
 
-### Options
+### 🎛️ Options
 
 | Option       | Default           |                                                                                                                                                                                                                      |
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -84,7 +84,7 @@ write.
 | `baseBranch` | `'main'`          | Branch that changed files are compared with; `origin/<branch>` is tried first                                                                                                                                        |
 | `layers`     | one layer         | `{ id, label, match, color, hidden? }`, matched against paths from the project root, first match wins. `hidden` layers start switched off. Node text is white, so keep each colour at 4.5:1 or better against white. |
 
-## How it works
+## 🔍 How it works
 
 - The graph is built with [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) when
   Storybook starts (a fraction of a second for a few hundred files), and rebuilt when you save a file
@@ -95,7 +95,7 @@ write.
 - Changed files are the diff from the merge base with the base branch to the working tree, plus
   untracked files. Without that branch, as in a shallow CI clone, the toggle is off.
 
-## Limits
+## 🚧 Limits
 
 - Story titles and `component` must be written as literals for a story to link.
 - The Lineage page isn't collected by `@storybook/addon-vitest`, which only runs the stories in your
