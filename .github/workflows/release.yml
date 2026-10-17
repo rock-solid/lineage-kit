@@ -44,11 +44,14 @@ jobs:
       - name: GitHub Release
         # Notes from the PRs merged since the package's previous release: the nearest earlier tag in
         # this tag's history, not the second-highest, which a later release (or hotfix) would break.
-        # `|| true`: a first release has none.
+        # `|| true`: a first release has none. PR links are shortened to `#12`, which GitHub links
+        # by itself, instead of the full URLs in GitHub's generated notes.
         run: |
           package="${GITHUB_REF_NAME%@*}"
           previous="$(git describe --tags --abbrev=0 --match "${package}@*" "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes \
-            ${previous:+--notes-start-tag "$previous"}
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -f tag_name="$GITHUB_REF_NAME" \
+            ${previous:+-f previous_tag_name="$previous"} --jq .body \
+            | sed -E "s|https://github.com/${GITHUB_REPOSITORY}/pull/([0-9]+)|#\1|g" > release-notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ github.token }}
