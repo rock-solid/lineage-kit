@@ -4,3 +4,5 @@ packages:
 
 allowBuilds:
   esbuild: true
+  # The `prepare` script installs the git hooks instead
+  lefthook: false

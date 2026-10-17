@@ -5,3 +5,6 @@ __screenshots__/
 *.log
 *.tgz
 .DS_Store
+
+# Per-machine lefthook overrides
+lefthook-local.yml

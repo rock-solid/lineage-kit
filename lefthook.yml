@@ -1,0 +1,10 @@
+# Installed on dependency install (the `prepare` script). Skip once with `git commit --no-verify`;
+# opt out on one machine with a gitignored `lefthook-local.yml`. CI checks PR titles regardless.
+commit-msg:
+  skip:
+    - merge
+    - rebase
+  commands:
+    commitlint:
+      # Direct bin, not `npx` / `pnpm exec`: skips package-manager startup, halving the hook time.
+      run: node_modules/.bin/commitlint --edit {1}
