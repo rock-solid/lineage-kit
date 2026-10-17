@@ -7,10 +7,10 @@ open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                             |                                                                                                                                             |
-| ------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial                                                                                                      |
-| `@rock-solid/payload-lineage`         | 0.0.0, not published                | In review: [#6](https://github.com/rock-solid/lineage-kit/pull/6), then [#8](https://github.com/rock-solid/lineage-kit/pull/8) on top of it |
+| Package                               | Version                             |                                                                         |
+| ------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------- |
+| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial                                  |
+| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published     | Lineage and Data model pages in the admin, tried on connect-hospitality |
 
 ## 🌐 Whole repo
 
@@ -138,8 +138,8 @@ globals, 22 blocks).
 
 ### 🚀 Now
 
-- **Land #6 and #8.** Open both pages logged in (the steps #8 marks _for the reviewer_), fix what
-  looks wrong, merge.
+- **First release, 0.1.0,** once the repo-wide install decision and the Release workflow for more
+  than one package are done (see [Whole repo](#-whole-repo)).
 
 ### ⏭️ Next
 
@@ -177,8 +177,6 @@ globals, 22 blocks).
 
 ### 🐞 Known issues
 
-- **Nobody has opened the pages logged in yet.** The redirects, the data and the layouts are tested,
-  but not how the pages look (#8).
 - **Links inside rich text are missing** from both pages (see Next).
 - **Form-builder's field blocks crowd the lineage graph** (`checkbox`, `email`, `text`, …) unless
   listed in `exclude`.
