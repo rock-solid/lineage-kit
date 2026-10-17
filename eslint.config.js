@@ -11,7 +11,7 @@ export default tseslint.config(
   {
     // Repo scripts run in Node
     files: ['scripts/**/*.mjs'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+    languageOptions: { globals: { console: 'readonly', process: 'readonly', URL: 'readonly' } },
   },
   {
     rules: {
