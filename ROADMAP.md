@@ -1,7 +1,8 @@
 # 🗺️ Roadmap
 
-Where lineage-kit is, what it does, what's next, what doesn't work yet, and ideas we haven't
-committed to. It
+Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to. For
+what it does today, see each package's README, e.g. the Storybook addon's
+[features](packages/storybook-addon-lineage#-features). It
 changes as we learn; open an issue to suggest or question anything here.
 
 ## 🧭 Status
@@ -10,53 +11,6 @@ changes as we learn; open an issue to suggest or question anything here.
 | ------------------------------------- | ----------------------------------- | -------------------------------------- |
 | `@rock-solid/storybook-addon-lineage` | 0.1.0, on GitHub Packages (private) | Used in connect-hospitality as a trial |
 | `@rock-solid/payload-plugin-lineage`  | Not started                         | See [Later](#-later)                   |
-
-## ✨ Features
-
-What `@rock-solid/storybook-addon-lineage` does today.
-
-**🔍 Explore**
-
-- A **Lineage** page in the sidebar, added by the addon: every file in the source folder as a node
-  and every import as an edge, read left to right from what a file is built with to where it is used.
-- **Layers** colour the nodes (UI primitives, components, blocks, pages…), set by path in the addon's
-  options. Switch any layer on or off; noisy ones, such as utilities, can start hidden.
-- **Hover** a node to trace its whole lineage: everything upstream and downstream lights up, the rest
-  dims.
-- **Search** every file, hidden layers included; picking a result switches its layer on.
-- **Hide unconnected files**, counts of files, imports and files without a story, a minimap, and pan
-  and zoom.
-
-**🎯 Focus**
-
-- **Click** a node to see only its lineage, with **Upstream** and **Downstream** levels (None, +1,
-  +2, +3, All), shown as a dbt selector such as `1+Header+2`.
-- **Double-click**, or **Open story**, to go to its docs page. Nodes show whether they have a story,
-  borrow one from their folder ("story via View"), or have none.
-
-**🔗 Links**
-
-- **Lineage** in the Storybook toolbar, on every story and docs page, opens the graph focused on that
-  component.
-- **The URL keeps the view:** focus and depths are saved however they change (a click, the graph's
-  panel, the Controls panel) and survive a reload, so a view can be shared. Files without a story get
-  a URL-safe key too.
-- The **Controls** panel sets the focus and depths as well.
-
-**🔄 Changes**
-
-- **Changed since main** (dbt's `state:modified+`): the files changed on your branch, committed or
-  not, and everything that uses them, with the stories to check. Changed files carry a badge in
-  every view.
-- **Live updates:** the graph rebuilds when imports change, without reloading the page.
-
-**⚙️ Setup**
-
-- One entry in `.storybook/main.ts`, no story file to write. Options for the source folder,
-  `tsconfig` (so aliases such as `@/` resolve), excluded paths, the base branch and layers.
-- Works in `storybook dev` and in the static `build-storybook` output.
-- The viewer passes Storybook's accessibility checks. The default layer colour keeps AA contrast
-  with the white node text; the package README says how to pick others that do.
 
 ## 🚀 Now
 
