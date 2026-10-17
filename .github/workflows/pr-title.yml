@@ -1,0 +1,22 @@
+name: PR title
+
+# Squash merges use the PR title as the commit on main. The local commit-msg hook is skippable
+# with --no-verify; this check is not. The rules live in rock-solid/github-actions: this repo's
+# commitlint.config.mjs when it has one, else the org default.
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional:
+    # Mirrors of this repo (e.g. evt-it/RS-*) copy .github/workflows/ too and can't resolve the
+    # private action, so skip the job there. It must be job-level: every `uses:` in a job is
+    # resolved before any step-level `if:` runs.
+    if: github.repository_owner == 'rock-solid'
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rock-solid/github-actions/actions/pr-title-lint@v1
