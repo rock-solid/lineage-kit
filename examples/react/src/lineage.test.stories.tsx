@@ -1,7 +1,8 @@
 import type { LineageGraphData } from '@rock-solid/storybook-addon-lineage';
 import { LineageGraph } from '@rock-solid/storybook-addon-lineage';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, waitFor } from 'storybook/test';
+import { useState } from 'react';
+import { expect, fn, waitFor } from 'storybook/test';
 
 // Tests of the viewer on fixture graphs, so they don't change when the example does. `!dev` keeps
 // them out of the sidebar; `pnpm test` still runs them.
@@ -78,6 +79,139 @@ export const Focus: Story = {
     await userEvent.selectOptions(canvas.getByLabelText('Downstream'), '+1');
     await expect(await canvas.findByText('Header+1')).toBeInTheDocument();
     await waitFor(() => expect(node(canvasElement, 'src/page.tsx')).toBeNull());
+  },
+};
+
+/** Depths given as props, as from a link or the Controls panel. */
+export const DepthsFromProps: Story = {
+  args: { graph, focus: 'src/header.tsx', upstream: 0, downstream: 1 },
+  play: async ({ canvas, canvasElement }) => {
+    await expect(await canvas.findByText('Header+1')).toBeInTheDocument();
+    await waitForNode(canvasElement, 'src/grid.tsx');
+    await expect(node(canvasElement, 'src/page.tsx')).toBeNull();
+    await expect(node(canvasElement, 'src/link.tsx')).toBeNull();
+  },
+};
+
+/** Props changed on a mounted graph (what the Controls panel does) update its focus and depths. */
+export const PropsChangeAfterMount: Story = {
+  args: { graph },
+  render: function Render(args) {
+    const [props, setProps] = useState({ focus: 'src/link.tsx', upstream: Infinity });
+    return (
+      <>
+        <button type="button" onClick={() => setProps({ focus: 'src/header.tsx', upstream: 1 })}>
+          Change props
+        </button>
+        <LineageGraph {...args} {...props} />
+      </>
+    );
+  },
+  play: async ({ canvas, userEvent }) => {
+    await expect(await canvas.findByText('+Link+')).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: 'Change props' }));
+    await expect(await canvas.findByText('1+Header+')).toBeInTheDocument();
+    await expect(await canvas.findByText('src/header.tsx')).toBeInTheDocument();
+  },
+};
+
+/** Every focus can go in a URL: a story id, or for a file without a story its encoded path. */
+export const FocusKeys: Story = {
+  args: { graph, onFocusChange: fn() },
+  play: async ({ args, canvasElement, userEvent }) => {
+    await userEvent.click(await waitForNode(canvasElement, 'src/carousel.tsx'));
+    await waitFor(() =>
+      expect(args.onFocusChange).toHaveBeenLastCalledWith('src_2Fcarousel_2Etsx'),
+    );
+    await userEvent.click(await waitForNode(canvasElement, 'src/header.tsx'));
+    await waitFor(() => expect(args.onFocusChange).toHaveBeenLastCalledWith('header--docs'));
+  },
+};
+
+/** An encoded path from a link resolves to its file. */
+export const FocusFromEncodedPath: Story = {
+  args: { graph, focus: 'src_2Fcarousel_2Etsx' },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText('src/carousel.tsx')).toBeInTheDocument();
+  },
+};
+
+/** `src/foo-bar.tsx` and `src/foo/bar.tsx` get different keys, and each key focuses its own file. */
+const similarPaths: LineageGraphData = {
+  changedSince: null,
+  layers,
+  nodes: [
+    { id: 'src/foo-bar.tsx', label: 'foo-bar', layer: 'component' },
+    { id: 'src/foo/bar.tsx', label: 'bar', layer: 'component' },
+    { id: 'src/page.tsx', label: 'Page', layer: 'component' },
+  ],
+  edges: [
+    { source: 'src/foo-bar.tsx', target: 'src/page.tsx' },
+    { source: 'src/foo/bar.tsx', target: 'src/page.tsx' },
+  ],
+};
+
+export const SimilarPathsKeepTheirKeys: Story = {
+  args: { graph: similarPaths, onFocusChange: fn() },
+  render: function Render(args) {
+    // Feeds the reported key back as the focus, as the Lineage page's args do
+    const [focus, setFocus] = useState<string | undefined>();
+    return (
+      <LineageGraph
+        {...args}
+        focus={focus}
+        onFocusChange={(key) => {
+          args.onFocusChange?.(key);
+          setFocus(key ?? undefined);
+        }}
+      />
+    );
+  },
+  // Checks the keys differ and each restores its own file, whatever the format (FocusKeys pins that)
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const onFocusChange = args.onFocusChange as ReturnType<typeof fn>;
+    const lastKey = () => onFocusChange.mock.lastCall?.[0];
+
+    await userEvent.click(await waitForNode(canvasElement, 'src/foo/bar.tsx'));
+    await waitFor(() => expect(lastKey()).toBeTruthy());
+    const slashKey = lastKey();
+    // The key came back as the focus and it's still foo/bar, not foo-bar
+    await expect(await canvas.findByText('src/foo/bar.tsx')).toBeInTheDocument();
+    await expect(canvas.queryByText('src/foo-bar.tsx')).toBeNull();
+
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(await waitForNode(canvasElement, 'src/foo-bar.tsx'));
+    // Esc reports null first, so wait for the second click's key
+    await waitFor(() => {
+      expect(lastKey()).toBeTruthy();
+      expect(lastKey()).not.toBe(slashKey);
+    });
+    await expect(await canvas.findByText('src/foo-bar.tsx')).toBeInTheDocument();
+    await expect(canvas.queryByText('src/foo/bar.tsx')).toBeNull();
+  },
+};
+
+/** A focus given as a path (e.g. typed into the Controls panel) is reported back as its key. */
+export const PathFocusReportedAsKey: Story = {
+  args: { graph, focus: 'src/link.tsx', onFocusChange: fn() },
+  play: async ({ args, canvas }) => {
+    await expect(await canvas.findByText('src/link.tsx')).toBeInTheDocument();
+    await waitFor(() => expect(args.onFocusChange).toHaveBeenLastCalledWith('src_2Flink_2Etsx'));
+  },
+};
+
+/** Depths changed in the graph's panel are reported, for the story to keep in the URL. */
+export const DepthChangeReported: Story = {
+  args: { graph, focus: 'src/header.tsx', onDepthChange: fn() },
+  play: async ({ args, canvas, userEvent }) => {
+    await canvas.findByText('+Header+');
+    await userEvent.selectOptions(canvas.getByLabelText('Upstream'), 'None');
+    await expect(args.onDepthChange).toHaveBeenLastCalledWith({
+      upstream: 0,
+      downstream: Infinity,
+    });
+    await userEvent.selectOptions(canvas.getByLabelText('Downstream'), '+2');
+    await expect(args.onDepthChange).toHaveBeenLastCalledWith({ upstream: 0, downstream: 2 });
   },
 };
 

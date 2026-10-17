@@ -51,8 +51,13 @@ export type LineageGraphProps = {
   upstream?: number;
   /** Levels of descendants (where the file is used) a focused node shows. Defaults to all. */
   downstream?: number;
-  /** Called with the focused node's story id (or path, when it has no story), or `null` when cleared. */
+  /**
+   * Called with the focused node's key, or `null` when cleared: its story id, or for a file without a
+   * story its URL-safe path (see `focusKey`), so the focus can always go in a URL.
+   */
   onFocusChange?: (focus: string | null) => void;
+  /** Called when Upstream or Downstream changes in the graph's panel. */
+  onDepthChange?: (depth: { upstream: number; downstream: number }) => void;
 };
 
 /**
@@ -68,17 +73,18 @@ export const LineageGraph: React.FC<LineageGraphProps> = (props) => (
 const LineageView: React.FC<LineageGraphProps> = ({
   graph = defaultGraph,
   focus: focusProp,
-  upstream: initialUpstream = Infinity,
-  downstream: initialDownstream = Infinity,
+  upstream: upstreamProp = Infinity,
+  downstream: downstreamProp = Infinity,
   onFocusChange,
+  onDepthChange,
 }) => {
   const { fitView } = useReactFlow();
   const [hiddenLayers, setHiddenLayers] = useState(
     () => new Set(graph.layers.filter((l) => l.hidden).map((l) => l.id)),
   );
   const [focus, setFocus] = useState(() => resolveFocus(graph, focusProp));
-  const [upstream, setUpstream] = useState(initialUpstream);
-  const [downstream, setDownstream] = useState(initialDownstream);
+  const [upstream, setUpstream] = useState(upstreamProp);
+  const [downstream, setDownstream] = useState(downstreamProp);
   const [hovered, setHovered] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [hideUnlinked, setHideUnlinked] = useState(true);
@@ -89,17 +95,33 @@ const LineageView: React.FC<LineageGraphProps> = ({
   const layers = useMemo(() => new Map(graph.layers.map((l) => [l.id, l])), [graph]);
   const nodesById = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
-  // Follow the prop, so a link from a story (which sets the arg) refocuses an open graph
-  const [syncedFocusProp, setSyncedFocusProp] = useState(focusProp);
-  if (focusProp !== syncedFocusProp) {
-    setSyncedFocusProp(focusProp);
-    setFocus(resolveFocus(graph, focusProp));
+  // Follow the props, so a link from a story or the Controls panel (which set the args) updates an
+  // open graph; the panel's own controls change the state in between
+  const [synced, setSynced] = useState({ focusProp, upstreamProp, downstreamProp });
+  if (focusProp !== synced.focusProp) setFocus(resolveFocus(graph, focusProp));
+  if (upstreamProp !== synced.upstreamProp) setUpstream(upstreamProp);
+  if (downstreamProp !== synced.downstreamProp) setDownstream(downstreamProp);
+  if (
+    focusProp !== synced.focusProp ||
+    upstreamProp !== synced.upstreamProp ||
+    downstreamProp !== synced.downstreamProp
+  ) {
+    setSynced({ focusProp, upstreamProp, downstreamProp });
   }
+
+  // A focus given in another form (a path typed into the Controls panel, another story's id) is
+  // reported back as the file's key, so what the URL keeps always restores it
+  useEffect(() => {
+    const id = resolveFocus(graph, focusProp);
+    const node = id ? nodesById.get(id) : undefined;
+    if (node && focusKey(node) !== focusProp) onFocusChange?.(focusKey(node));
+  }, [graph, nodesById, focusProp, onFocusChange]);
 
   const focusOn = useCallback(
     (id: string | null) => {
       setFocus(id);
-      onFocusChange?.(id ? (nodesById.get(id)?.storyId ?? id) : null);
+      const node = id ? nodesById.get(id) : undefined;
+      onFocusChange?.(node ? focusKey(node) : null);
     },
     [nodesById, onFocusChange],
   );
@@ -449,8 +471,22 @@ const LineageView: React.FC<LineageGraphProps> = ({
                   {selector(focused.label, upstream, downstream)}
                 </code>
                 <div className={styles.depths}>
-                  <DepthSelect label="Upstream" value={upstream} onChange={setUpstream} />
-                  <DepthSelect label="Downstream" value={downstream} onChange={setDownstream} />
+                  <DepthSelect
+                    label="Upstream"
+                    value={upstream}
+                    onChange={(value) => {
+                      setUpstream(value);
+                      onDepthChange?.({ upstream: value, downstream });
+                    }}
+                  />
+                  <DepthSelect
+                    label="Downstream"
+                    value={downstream}
+                    onChange={(value) => {
+                      setDownstream(value);
+                      onDepthChange?.({ upstream, downstream: value });
+                    }}
+                  />
                 </div>
                 {storyOf(focused) && (
                   <button
@@ -537,11 +573,44 @@ function selector(name: string, upstream: number, downstream: number) {
 }
 
 /** A node id from a path, or from a story id: the exact docs id first, then any story of the same component. */
+/**
+ * A file's path as a URL-safe key that decodes back to it, since Storybook drops `/` and `.` from URL
+ * args. Letters, digits and `-` stay; anything else becomes `_` and its UTF-8 bytes in hex, like
+ * percent-encoding with `_` (`src/a.tsx` → `src_2Fa_2Etsx`). `_` itself is always escaped, so two
+ * paths never share a key.
+ */
+const encodePath = (path: string) =>
+  Array.from(new TextEncoder().encode(path), (byte) =>
+    /[A-Za-z0-9-]/.test(String.fromCharCode(byte))
+      ? String.fromCharCode(byte)
+      : `_${byte.toString(16).toUpperCase().padStart(2, '0')}`,
+  ).join('');
+
+/** The path a key from `encodePath` stands for, or `null` for anything that isn't one. */
+function decodePath(key: string) {
+  if (!/^[A-Za-z0-9_-]+$/.test(key)) return null;
+  try {
+    return decodeURIComponent(key.replaceAll('_', '%'));
+  } catch {
+    return null;
+  }
+}
+
+/** The key `onFocusChange` reports for a node: its story id, else its encoded path. */
+export function focusKey(node: LineageNode) {
+  return node.storyId ?? encodePath(node.id);
+}
+
+/**
+ * A node id from a focus: a path, an encoded path, or a story id (the exact docs id first, then any
+ * story of the same component). Story ids never contain `_`, so they can't pass for encoded paths.
+ */
 function resolveFocus(graph: Graph, focus: string | undefined) {
   if (!focus) return null;
   const component = focus.split('--')[0];
+  const path = decodePath(focus);
   const node =
-    graph.nodes.find((n) => n.id === focus || n.storyId === focus) ??
+    graph.nodes.find((n) => n.id === focus || n.storyId === focus || n.id === path) ??
     graph.nodes.find((n) => n.storyId?.split('--')[0] === component);
   return node?.id ?? null;
 }

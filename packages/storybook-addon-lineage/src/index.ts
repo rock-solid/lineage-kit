@@ -1,4 +1,4 @@
-export { LineageGraph, type LineageGraphProps } from './LineageGraph';
+export { focusKey, LineageGraph, type LineageGraphProps } from './LineageGraph';
 export type {
   LayerConfig,
   LineageEdge,
