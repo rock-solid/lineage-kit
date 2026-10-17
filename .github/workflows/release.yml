@@ -6,6 +6,12 @@ on:
   push:
     tags: ['storybook-addon-lineage@*']
 
+# `bash` rather than the default `bash -e`: it adds `-o pipefail`, so a failing command in a pipe
+# (`gh api … | sed`) fails the step instead of being masked
+defaults:
+  run:
+    shell: bash
+
 permissions:
   # contents: write for the GitHub Release
   contents: write
