@@ -12,9 +12,10 @@ changes as we learn; open an issue to suggest or question anything here.
 
 ## 🚀 Now
 
-- **Keep the view in the URL and restore the Controls panel** ([#4](https://github.com/rock-solid/lineage-kit/pull/4)):
-  URL-safe focus keys for files without a story, depth changes written back, depths that survive a
-  reload. Ships as 0.1.1.
+- **Keep the view in the URL and restore the Controls panel** ([#4](https://github.com/rock-solid/lineage-kit/pull/4),
+  in review). Every file gets a key the URL keeps: its story id, or its encoded path. Focus and
+  depths are saved however they change (a click, the graph's panel, the Controls panel, a typed
+  path) and survive a reload. Ships as 0.1.1.
 - **Decide how projects install it.** GitHub Packages needs a token wherever pnpm installs: every
   developer, every CI job and every Docker build, because pnpm 12's supply-chain check fetches the
   package's metadata ([Known issues](#-known-issues)). Publishing publicly on npmjs.com removes all of
@@ -52,7 +53,8 @@ changes as we learn; open an issue to suggest or question anything here.
 Things that misbehave today. Fixes welcome.
 
 - **0.1.0 loses the view on reload, and its Controls panel is empty** in projects installing the
-  package. Fixed in [#4](https://github.com/rock-solid/lineage-kit/pull/4), not yet released.
+  package. Clicking a file without a story, or changing a depth, doesn't reach the URL. Fixed in
+  [#4](https://github.com/rock-solid/lineage-kit/pull/4), shipping in 0.1.1.
 - **Installs need a GitHub token.** Beyond `pnpm install`, pnpm re-checks the lockfile's
   supply-chain policy on fresh clones and after lockfile or workspace changes, and that check also
   needs the token. Until then even `pnpm test:storybook` fails with a 401.
@@ -86,6 +88,11 @@ What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 - **One source folder** per Storybook; no graph across the packages of a monorepo.
 - **Changed files need the base branch locally** (`origin/main` or `main`). In shallow CI clones the
   toggle is off.
+- **Links to files without a story aren't pretty.** Their key is the path with `_` and a hex code for
+  each `/`, `.` or other character (`src_2Fblocks_2FRenderBlocks_2Etsx`), so that no two paths share
+  a key. Story ids, which most links use, stay readable.
+- **Links name the docs page.** Opening the graph from a story saves that component's docs id
+  (`ui-button--docs`), not the story you came from.
 - **The Lineage page isn't a story test** in projects using it: `@storybook/addon-vitest` only runs
   stories from the project's own globs.
 - **Light theme only,** with a fixed-width panel; not built for phone-sized screens.

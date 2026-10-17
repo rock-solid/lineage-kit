@@ -29,7 +29,7 @@ const meta = {
     focus: {
       control: 'text',
       description:
-        "The file to focus on: one of its stories' ids (`ui-button--docs`), its path (`src/components/ui/button.tsx`), or its path with `-` for `/` and `.` (`src-components-ui-button-tsx`), which is what the URL keeps",
+        "The file to focus on: one of its stories' ids (`ui-button--docs`) or its path (`src/components/ui/button.tsx`). A path becomes a URL-safe key (`src_2Fcomponents_2Fui_2Fbutton_2Etsx`) so the URL keeps it.",
     },
     upstream: {
       control: { type: 'select', labels: DEPTH_LABELS },

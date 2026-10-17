@@ -109,6 +109,14 @@ const LineageView: React.FC<LineageGraphProps> = ({
     setSynced({ focusProp, upstreamProp, downstreamProp });
   }
 
+  // A focus given in another form (a path typed into the Controls panel, another story's id) is
+  // reported back as the file's key, so what the URL keeps always restores it
+  useEffect(() => {
+    const id = resolveFocus(graph, focusProp);
+    const node = id ? nodesById.get(id) : undefined;
+    if (node && focusKey(node) !== focusProp) onFocusChange?.(focusKey(node));
+  }, [graph, nodesById, focusProp, onFocusChange]);
+
   const focusOn = useCallback(
     (id: string | null) => {
       setFocus(id);
@@ -565,23 +573,44 @@ function selector(name: string, upstream: number, downstream: number) {
 }
 
 /** A node id from a path, or from a story id: the exact docs id first, then any story of the same component. */
-/** A file's path as a URL-safe key (`src-blocks-RenderBlocks-tsx`): Storybook drops `/` and `.` from URL args. */
-const urlSafe = (path: string) => path.replace(/[^a-zA-Z0-9]+/g, '-');
+/**
+ * A file's path as a URL-safe key that decodes back to it, since Storybook drops `/` and `.` from URL
+ * args. Letters, digits and `-` stay; anything else becomes `_` and its UTF-8 bytes in hex, like
+ * percent-encoding with `_` (`src/a.tsx` → `src_2Fa_2Etsx`). `_` itself is always escaped, so two
+ * paths never share a key.
+ */
+const encodePath = (path: string) =>
+  Array.from(new TextEncoder().encode(path), (byte) =>
+    /[A-Za-z0-9-]/.test(String.fromCharCode(byte))
+      ? String.fromCharCode(byte)
+      : `_${byte.toString(16).toUpperCase().padStart(2, '0')}`,
+  ).join('');
 
-/** The key `onFocusChange` reports for a node: its story id, else its URL-safe path. */
+/** The path a key from `encodePath` stands for, or `null` for anything that isn't one. */
+function decodePath(key: string) {
+  if (!/^[A-Za-z0-9_-]+$/.test(key)) return null;
+  try {
+    return decodeURIComponent(key.replaceAll('_', '%'));
+  } catch {
+    return null;
+  }
+}
+
+/** The key `onFocusChange` reports for a node: its story id, else its encoded path. */
 export function focusKey(node: LineageNode) {
-  return node.storyId ?? urlSafe(node.id);
+  return node.storyId ?? encodePath(node.id);
 }
 
 /**
- * A node id from a focus: a path, a URL-safe path, or a story id (the exact docs id first, then any
- * story of the same component).
+ * A node id from a focus: a path, an encoded path, or a story id (the exact docs id first, then any
+ * story of the same component). Story ids never contain `_`, so they can't pass for encoded paths.
  */
 function resolveFocus(graph: Graph, focus: string | undefined) {
   if (!focus) return null;
   const component = focus.split('--')[0];
+  const path = decodePath(focus);
   const node =
-    graph.nodes.find((n) => n.id === focus || n.storyId === focus || urlSafe(n.id) === focus) ??
+    graph.nodes.find((n) => n.id === focus || n.storyId === focus || n.id === path) ??
     graph.nodes.find((n) => n.storyId?.split('--')[0] === component);
   return node?.id ?? null;
 }
