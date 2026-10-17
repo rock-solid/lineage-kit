@@ -1,0 +1,13 @@
+# Weekly PRs that update the GitHub Actions the workflows use, grouped into one. npm dependencies
+# get Dependabot's security alerts and fixes (turned on in the repo's settings), not version PRs.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci

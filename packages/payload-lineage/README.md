@@ -29,9 +29,6 @@ Works with Payload 3 on Next.js 15 or 16, with React 19.
 
 ## 📥 Install
 
-Not published yet: the first release, 0.2.0, is on the
-[roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin). Then:
-
 ```sh
 pnpm add @rocksoliddigital/payload-lineage
 ```
