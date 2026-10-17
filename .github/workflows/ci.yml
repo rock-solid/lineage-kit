@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# CI only reads the code. Explicit rather than the repo's default, which settings can change
+permissions:
+  contents: read
+
 jobs:
   check:
     name: Check
