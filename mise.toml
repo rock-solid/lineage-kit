@@ -19,7 +19,7 @@ description = "Build the packages to dist/"
 run = "pnpm build"
 
 [tasks.test]
-description = "Run the example's stories as browser tests, with play functions and a11y checks"
+description = "Run the unit tests and the example's stories as browser tests, with play functions and a11y checks"
 run = "pnpm test"
 
 [tasks.lint]

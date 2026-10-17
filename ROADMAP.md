@@ -8,7 +8,7 @@ changes as we learn; open an issue to suggest or question anything here.
 | Package                               | Version                             |                                        |
 | ------------------------------------- | ----------------------------------- | -------------------------------------- |
 | `@rock-solid/storybook-addon-lineage` | 0.1.0, on GitHub Packages (private) | Used in connect-hospitality as a trial |
-| `@rock-solid/payload-plugin-lineage`  | Not started                         | See [Later](#-later)                   |
+| `@rock-solid/payload-plugin-lineage`  | In progress, not published          | See [Later](#-later)                   |
 
 ## 🚀 Now
 

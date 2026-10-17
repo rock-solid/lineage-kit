@@ -1,0 +1,49 @@
+{
+  "name": "@rock-solid/payload-plugin-lineage",
+  "version": "0.0.0",
+  "description": "Content lineage from a Payload config: the collections, globals and blocks, and the fields that link them.",
+  "keywords": [
+    "payload",
+    "payload-plugin",
+    "lineage",
+    "dependency-graph"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rock-solid/lineage-kit.git",
+    "directory": "packages/payload-plugin-lineage"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.9",
+    "payload": "3.90.2",
+    "tsup": "8.5.1",
+    "typescript": "5.7.3",
+    "vitest": "4.0.18"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

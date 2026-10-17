@@ -5,10 +5,10 @@ used, and what a change affects.
 
 ## 📦 Packages
 
-| Package                                                                   | Status  |                                                                        |
-| ------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------- |
-| [`@rock-solid/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1     | The lineage graph of your components, as a page in Storybook           |
-| `@rock-solid/payload-plugin-lineage`                                      | Planned | Collections, blocks and the pages that use them, from a Payload config |
+| Package                                                                   | Status |                                                                        |
+| ------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------- |
+| [`@rock-solid/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1    | The lineage graph of your components, as a page in Storybook           |
+| [`@rock-solid/payload-plugin-lineage`](packages/payload-plugin-lineage)   | 0.0    | Collections, blocks and the pages that use them, from a Payload config |
 
 ## 🚀 Quick start
 
