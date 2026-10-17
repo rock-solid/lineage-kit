@@ -1,5 +1,7 @@
 // The content graph, shaped like the Storybook addon's so its page can merge the two.
 
+import type { Payload, TypedUser } from 'payload';
+
 export type ContentKind = 'collection' | 'global' | 'block';
 
 export type ContentNode = {
@@ -48,8 +50,24 @@ export type LineagePluginOptions = ContentGraphOptions & {
    */
   adminView?: boolean;
   /**
+   * Who can open the admin pages and see their nav link, on top of the admin's own access rule.
+   * Defaults to everyone who can use the admin. E.g. `({ user }) => user.role === 'admin'`.
+   */
+  access?: LineageAccess;
+  /**
    * Where to write the graph as JSON when Payload starts, relative to the working directory, e.g.
    * for the Storybook page to merge. Written outside production only.
    */
   outputFile?: string;
+};
+
+export type LineageAccess = (args: {
+  payload: Payload;
+  user: TypedUser;
+}) => boolean | Promise<boolean>;
+
+/** What the plugin keeps in `config.custom.lineage` for the admin pages; server-only, like `custom`. */
+export type LineageCustomConfig = {
+  graphOptions: ContentGraphOptions;
+  access?: LineageAccess;
 };

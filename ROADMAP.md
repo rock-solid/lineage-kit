@@ -172,8 +172,6 @@ globals, 22 blocks).
   collections use `link`, `linkGroup` or `sectionHeaderFields`.
 - **A drift check** against hand-written inventories, such as a "page layouts and components" or a
   content model doc, in CI.
-- **Who can open the pages,** as an option (e.g. admins only), beyond today's "logged in, and only
-  what you can read".
 - **Pending database changes:** compare the config with the latest migration snapshot
   (`src/migrations/*.json`) to show what `migrate:create` would change, before running it.
 

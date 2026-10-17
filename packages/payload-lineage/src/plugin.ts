@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Config, Plugin } from 'payload';
 
 import { buildContentGraph, type PayloadConfigLike } from './graph';
-import type { ContentGraphOptions, LineagePluginOptions } from './types';
+import type { ContentGraphOptions, LineageCustomConfig, LineagePluginOptions } from './types';
 
 const PACKAGE = '@rock-solid/payload-lineage';
 
@@ -14,13 +14,14 @@ const PACKAGE = '@rock-solid/payload-lineage';
 export function lineagePlugin({
   enabled = true,
   adminView = true,
+  access,
   outputFile,
   ...graphOptions
 }: LineagePluginOptions = {}): Plugin {
   return (config: Config): Config => {
     if (!enabled) return config;
     let result = config;
-    if (adminView) result = withAdminView(result, graphOptions);
+    if (adminView) result = withAdminView(result, { graphOptions, access });
     if (outputFile && process.env.NODE_ENV !== 'production') {
       result = withOutputFile(result, outputFile, graphOptions);
     }
@@ -28,25 +29,28 @@ export function lineagePlugin({
   };
 }
 
-function withAdminView(config: Config, graphOptions: ContentGraphOptions): Config {
+function withAdminView(config: Config, lineage: LineageCustomConfig): Config {
   const components = config.admin?.components;
   return {
     ...config,
+    // For the pages and the nav link to read on the server; Payload never sends `custom` to the browser
+    custom: { ...config.custom, lineage },
     admin: {
       ...config.admin,
       components: {
         ...components,
-        afterNavLinks: [...(components?.afterNavLinks ?? []), `${PACKAGE}/client#LineageNavLink`],
+        // A server component, so it can check access before rendering the link
+        afterNavLinks: [...(components?.afterNavLinks ?? []), `${PACKAGE}/rsc#LineageNavLink`],
         views: {
           ...components?.views,
           // Exact, so `/lineage` doesn't also match the data model below it
           lineage: {
-            Component: { path: `${PACKAGE}/rsc#LineageView`, serverProps: { graphOptions } },
+            Component: `${PACKAGE}/rsc#LineageView`,
             exact: true,
             path: '/lineage',
           },
           lineageSchema: {
-            Component: { path: `${PACKAGE}/rsc#SchemaView`, serverProps: { graphOptions } },
+            Component: `${PACKAGE}/rsc#SchemaView`,
             exact: true,
             path: '/lineage/schema',
           },

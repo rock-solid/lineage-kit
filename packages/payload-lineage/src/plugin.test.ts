@@ -34,9 +34,11 @@ describe('lineagePlugin', () => {
     expect(await lineagePlugin({ outputFile: 'x.json', enabled: false })(config)).toBe(config);
   });
 
-  it('adds the admin view and nav link, keeping the ones already there', async () => {
-    const result = await lineagePlugin({ exclude: ['block:text'] })({
+  it('adds the admin views and nav link, keeping the ones already there', async () => {
+    const access = () => true;
+    const result = await lineagePlugin({ exclude: ['block:text'], access })({
       ...config,
+      custom: { mine: true },
       admin: {
         components: {
           afterNavLinks: ['/Mine#Link'],
@@ -46,26 +48,25 @@ describe('lineagePlugin', () => {
     });
     expect(result.admin?.components?.afterNavLinks).toEqual([
       '/Mine#Link',
-      '@rock-solid/payload-lineage/client#LineageNavLink',
+      '@rock-solid/payload-lineage/rsc#LineageNavLink',
     ]);
     expect(result.admin?.components?.views).toEqual({
       mine: { Component: '/Mine', path: '/mine' },
       lineage: {
-        Component: {
-          path: '@rock-solid/payload-lineage/rsc#LineageView',
-          serverProps: { graphOptions: { exclude: ['block:text'] } },
-        },
+        Component: '@rock-solid/payload-lineage/rsc#LineageView',
         exact: true,
         path: '/lineage',
       },
       lineageSchema: {
-        Component: {
-          path: '@rock-solid/payload-lineage/rsc#SchemaView',
-          serverProps: { graphOptions: { exclude: ['block:text'] } },
-        },
+        Component: '@rock-solid/payload-lineage/rsc#SchemaView',
         exact: true,
         path: '/lineage/schema',
       },
+    });
+    // Server-only, where the pages and the nav link read their options and access
+    expect(result.custom).toEqual({
+      mine: true,
+      lineage: { graphOptions: { exclude: ['block:text'] }, access },
     });
     // No output file, so nothing runs on init
     expect(result.onInit).toBeUndefined();

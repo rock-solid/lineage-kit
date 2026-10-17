@@ -13,8 +13,23 @@ The content side of lineage, from a Payload config, as two pages in the admin:
   global is a single document, so its references are `one-to-one` or `one-to-many`.
 
 Both are built from the running config on each visit (well under a millisecond), so they are never
-out of date. They're for logged-in users, and show only the collections and globals the user can
-read. A "Lineage" link in the nav opens them.
+out of date. A "Lineage" link in the nav opens them.
+
+## 🔒 Access
+
+The pages and their nav link are for users who can use the admin (Payload's `access.admin` on the
+users collection, which Payload itself doesn't check on custom pages), and who pass the plugin's
+`access`, if set:
+
+```ts
+lineagePlugin({ access: ({ user }) => user.role === 'admin' });
+```
+
+Anyone else is sent where Payload sends them for its own pages: the login page when logged out, the
+unauthorized page when logged in, each with a `redirect` back. The pages show only the collections
+and globals the user can read, along with every link to or from them; blocks have no access control
+of their own, so they're all shown. Everything is checked and built on the server, so nothing a user
+can't see reaches the browser.
 
 Works with Payload 3 on Next.js 15 or 16.
 
@@ -45,6 +60,7 @@ pnpm payload generate:importmap
 | Option       | Default |                                                                                   |
 | ------------ | ------- | --------------------------------------------------------------------------------- |
 | `adminView`  | `true`  | The two admin pages and the nav link                                              |
+| `access`     | none    | `({ user, payload }) => boolean`, on top of admin access; see [Access](#-access)  |
 | `outputFile` | none    | Where to write the lineage graph as JSON on each start, outside production only   |
 | `exclude`    | `[]`    | Slugs to leave out of both pages and the file; `block:text` names only that block |
 | `enabled`    | `true`  | Set to `false` to turn the plugin off                                             |

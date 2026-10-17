@@ -2,22 +2,19 @@
 import { DefaultTemplate } from '@payloadcms/next/templates';
 import { Gutter } from '@payloadcms/ui';
 import { redirect } from 'next/navigation';
-import type { AdminViewServerProps, SanitizedPermissions } from 'payload';
+import type { AdminViewServerProps, SanitizedPermissions, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import React from 'react';
 
 // Through the client entry, so the canvases stay behind its 'use client' boundary in the build
-import { ErdCanvas, LineageCanvas } from './client.js';
+import { ErdCanvas, LineageCanvas, LineageNavLinkClient } from './client.js';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
+import { canOpen, lineageConfig } from './access';
 import { buildSchema } from './schema';
-import type { ContentGraphOptions } from './types';
 import { schemaForViewer } from './view/erdModel';
 import { adminPath, forViewer } from './view/model';
 
-export type LineageViewProps = AdminViewServerProps & {
-  /** Passed by the plugin as `serverProps`. */
-  graphOptions?: ContentGraphOptions;
-};
+export type LineageViewProps = AdminViewServerProps;
 
 const TABS = [
   { path: '/lineage', label: 'Lineage' },
@@ -26,11 +23,11 @@ const TABS = [
 
 /**
  * The admin page at `/admin/lineage`: the content graph of the running config, built on each visit
- * (a fraction of a millisecond), so it is never out of date. Logged-in users only, and only the
- * collections and globals they can read.
+ * (a fraction of a millisecond), so it is never out of date. For users who can use the admin and
+ * pass the plugin's `access`, showing only the collections and globals they can read.
  */
-export function LineageView({ graphOptions, ...props }: LineageViewProps) {
-  const { payload, permissions } = viewer(props, '/lineage');
+export async function LineageView(props: LineageViewProps) {
+  const { payload, permissions, graphOptions } = await authorize(props, '/lineage');
   const graph = forViewer(
     buildContentGraph(payload.config as PayloadConfigLike, graphOptions),
     (node) => canRead(permissions, node),
@@ -51,8 +48,8 @@ export function LineageView({ graphOptions, ...props }: LineageViewProps) {
  * The admin page at `/admin/lineage/schema`: the data model as an ERD, a table per collection and
  * global with its fields, and a line per reference. Same access as the lineage page.
  */
-export function SchemaView({ graphOptions, ...props }: LineageViewProps) {
-  const { payload, permissions } = viewer(props, '/lineage/schema');
+export async function SchemaView(props: LineageViewProps) {
+  const { payload, permissions, graphOptions } = await authorize(props, '/lineage/schema');
   const schema = schemaForViewer(
     buildSchema(payload.config as PayloadConfigLike, graphOptions),
     (entity) => canRead(permissions, entity),
@@ -69,17 +66,33 @@ export function SchemaView({ graphOptions, ...props }: LineageViewProps) {
   );
 }
 
-/** The logged-in viewer, or a redirect to the login page and back. */
-function viewer({ initPageResult }: AdminViewServerProps, path: `/${string}`) {
+/**
+ * "Lineage" in the admin's nav, for the users who can open the pages. Payload renders it on the
+ * server with the nav's props, so the check runs before anything reaches the browser.
+ */
+export async function LineageNavLink({ payload, permissions, user }: ServerProps) {
+  if (!(await canOpen(payload, permissions, user))) return null;
+  return <LineageNavLinkClient />;
+}
+
+/**
+ * The viewer, if they may open the pages: logged in, allowed into the admin, and passing the
+ * plugin's `access`. Payload doesn't check custom views itself. Anyone else goes where Payload sends
+ * them for its own pages: the login page, or the unauthorized page when logged in, then back here.
+ */
+async function authorize({ initPageResult }: AdminViewServerProps, path: `/${string}`) {
   const { req, permissions } = initPageResult;
-  const adminRoute = req.payload.config.routes.admin;
-  if (!req.user) {
-    const here = formatAdminURL({ adminRoute, path });
-    redirect(
-      `${formatAdminURL({ adminRoute, path: '/login' })}?redirect=${encodeURIComponent(here)}`,
-    );
+  const { payload, user } = req;
+  if (!(await canOpen(payload, permissions, user))) {
+    const { admin, routes } = payload.config;
+    const here = formatAdminURL({ adminRoute: routes.admin, path });
+    const to = formatAdminURL({
+      adminRoute: routes.admin,
+      path: user ? admin.routes.unauthorized : admin.routes.login,
+    });
+    redirect(`${to}?redirect=${encodeURIComponent(here)}`);
   }
-  return { payload: req.payload, permissions };
+  return { payload, permissions, graphOptions: lineageConfig(payload).graphOptions };
 }
 
 function canRead(
