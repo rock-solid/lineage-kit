@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   layout,
@@ -38,4 +38,46 @@ export function useLayout(
   }, [key]);
 
   return positions;
+}
+
+/**
+ * Copies text, with the old `execCommand('copy')` as a fallback where the clipboard API is refused
+ * (an iframe without `clipboard-write`, a non-secure origin). Resolves to whether it worked.
+ */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try {
+      return document.execCommand('copy');
+    } catch {
+      return false;
+    } finally {
+      area.remove();
+    }
+  }
+}
+
+export type CopyStatus = 'idle' | 'copied' | 'failed';
+
+/** `copy(text)` and how the last copy went, back to `idle` after a couple of seconds. */
+export function useCopy(resetAfterMs = 2000) {
+  const [status, setStatus] = useState<CopyStatus>('idle');
+  const copy = useCallback(async (text: string) => {
+    setStatus((await copyText(text)) ? 'copied' : 'failed');
+  }, []);
+  useEffect(() => {
+    if (status === 'idle') return;
+    const timer = setTimeout(() => setStatus('idle'), resetAfterMs);
+    return () => clearTimeout(timer);
+  }, [status, resetAfterMs]);
+  return { status, copy };
 }

@@ -18,6 +18,8 @@ Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vit
 - **Search** every file, hidden layers included; picking a result switches its layer on.
 - **Hide unconnected files**, counts of files, imports and files without a story, a minimap, and pan
   and zoom.
+- **Copy as Mermaid** copies the graph as shown, focus and hidden layers included, as a Mermaid
+  flowchart: paste it into a PR, a doc or a ticket, and GitHub, GitLab and most docs tools draw it.
 
 **🎯 Focus**
 

@@ -26,17 +26,8 @@ open an issue to suggest or question anything here.
 - **More in the shared core.** `packages/lineage-core` holds the traversal and the ELK layout; the
   React Flow canvases (hover tracing, fit-to-view, the minimap) are still written twice, once per
   tool, and are the next candidates.
-- **Export a view as an image or a Mermaid diagram,** for docs, PRs and tickets. One Export button
-  on each page, exporting what's on screen, with its filters and focus:
-  - **PNG or SVG** of the canvas, in the current theme.
-  - **Mermaid**, which GitHub, GitLab and most docs tools render from text, so it can be pasted into a
-    PR description and reviewed like code. The Storybook graph and the Payload lineage become a
-    `flowchart LR`; the Payload data model an `erDiagram`, whose crow's-foot notation carries
-    `many-to-one` and the rest (`}o--||`).
-  - The same as functions (`toMermaid(graph)`, `toMermaid(schema)`), so a script or a CI job can keep
-    a diagram in the docs up to date.
-  - Large graphs make unreadable Mermaid, so the export should warn past a size, e.g. 50 nodes, and
-    suggest focusing first.
+- **Export a view as an image,** PNG or SVG of the canvas in the current theme, next to Copy
+  Mermaid on each page.
 
 ### 🐞 Known issues
 

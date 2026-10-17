@@ -21,6 +21,10 @@ Both are built from the running config on each visit (well under a millisecond),
 out of date. A "Lineage" link in the nav opens them. To try them, run the
 [example](https://github.com/rock-solid/lineage-kit/tree/main/examples/payload).
 
+**Copy Mermaid**, on both pages, copies what the page shows, with its filters, as a Mermaid diagram:
+the lineage as a flowchart, the data model as an `erDiagram` in crow's-foot notation. Paste it into
+a PR, a doc or a ticket, and GitHub, GitLab and most docs tools draw it.
+
 Works with Payload 3 on Next.js 15 or 16, with React 19.
 
 > **Status:** early. Both pages come from the config only. Which pages use which blocks (from the
@@ -85,14 +89,20 @@ lineagePlugin({
 });
 ```
 
-Or build either yourself, e.g. in a script:
+Or build either yourself, e.g. in a script, and keep a diagram in your docs up to date:
 
 ```ts
-import { buildContentGraph, buildSchema } from '@rocksoliddigital/payload-lineage';
+import {
+  buildContentGraph,
+  buildSchema,
+  contentGraphToMermaid,
+  schemaToMermaid,
+} from '@rocksoliddigital/payload-lineage';
 import config from '@payload-config';
 
 const graph = buildContentGraph(await config);
 const schema = buildSchema(await config);
+const diagram = schemaToMermaid(schema); // or contentGraphToMermaid(graph)
 ```
 
 ## 🔒 Access

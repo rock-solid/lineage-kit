@@ -19,7 +19,9 @@ import { trace } from '@rocksoliddigital/lineage-core';
 import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import { contentGraphToMermaid } from '../mermaid';
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
+import { CopyMermaid } from './CopyMermaid';
 import {
   fitPadding,
   layoutEdges,
@@ -220,6 +222,10 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
               <span className="rs-lineage__count">
                 {visible.nodes.length} nodes, {links} link{links === 1 ? '' : 's'}
               </span>
+              <CopyMermaid
+                text={() => contentGraphToMermaid({ nodes: visible.nodes, edges: visible.edges })}
+                size={visible.nodes.length}
+              />
             </div>
           </Panel>
         </ReactFlow>

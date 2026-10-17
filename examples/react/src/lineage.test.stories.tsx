@@ -262,3 +262,27 @@ export const Empty: Story = {
     await waitFor(() => expect(canvasElement.querySelector('[data-ready]')).not.toBeNull());
   },
 };
+
+/** Copy as Mermaid copies the graph as shown: hidden layers stay out. */
+export const CopyAsMermaid: Story = {
+  args: { graph },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await waitForNode(canvasElement, 'src/link.tsx');
+    // Stand in for the clipboard, so the test sees exactly what was copied
+    const writeText = fn(async (_text: string) => {});
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    try {
+      await userEvent.click(canvas.getByRole('button', { name: 'Copy as Mermaid' }));
+      await expect(await canvas.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+      const text = writeText.mock.calls[0][0];
+      await expect(text).toMatch(/^flowchart LR\n/);
+      await expect(text).toContain('["Header"]');
+      await expect(text).toContain('["Page"]');
+      await expect(text).not.toContain('merge');
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original);
+      else delete (navigator as { clipboard?: unknown }).clipboard;
+    }
+  },
+};
