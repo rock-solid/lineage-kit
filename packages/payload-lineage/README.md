@@ -20,7 +20,7 @@ Works with Payload 3 on Next.js 15 or 16.
 
 > **Status:** early. Both pages come from the config only. Which pages use which blocks (from the
 > documents), shared field configs (by import scan) and merging into the Storybook page are next;
-> see the [roadmap](ROADMAP.md).
+> see the [roadmap](../../ROADMAP.md#-payload-plugin).
 
 ## ⚙️ Set up
 
