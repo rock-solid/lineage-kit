@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 
-// Shaped like connect-hospitality's config: a hero group, a layout of blocks, a shared link field
+// Shaped like a real Payload site's config: a hero group, a layout of blocks, a shared link field
 const link = {
   name: 'link',
   type: 'group',
