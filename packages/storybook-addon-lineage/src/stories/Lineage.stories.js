@@ -7,6 +7,10 @@ import { expect, waitFor } from 'storybook/test';
 
 import { LineageGraph } from '../index.js';
 
+const DEPTH_OPTIONS = ['0', '1', '2', '3', 'all'];
+const DEPTH_MAPPING = { 0: 0, 1: 1, 2: 2, 3: 3, all: Infinity };
+const DEPTH_LABELS = { 0: 'None', 1: '+1', 2: '+2', 3: '+3', all: 'All' };
+
 const meta = {
   title: 'Lineage',
   component: LineageGraph,
@@ -17,7 +21,26 @@ const meta = {
     // Focusing a node changes the args; that is navigation, not an edit worth saving
     controls: { disableSaveFromUI: true },
   },
+  // Declared here rather than left to docgen, which can't read prop types from compiled JS. The
+  // depths map URL-safe keys to numbers: Storybook keeps only plain strings in the URL.
   argTypes: {
+    focus: {
+      control: 'text',
+      description:
+        "The file to focus on: its path (`src/components/ui/button.tsx`) or one of its stories' ids (`ui-button--docs`)",
+    },
+    upstream: {
+      control: { type: 'select', labels: DEPTH_LABELS },
+      options: DEPTH_OPTIONS,
+      mapping: DEPTH_MAPPING,
+      description: 'Levels of ancestors (what the file is built with) a focused file shows',
+    },
+    downstream: {
+      control: { type: 'select', labels: DEPTH_LABELS },
+      options: DEPTH_OPTIONS,
+      mapping: DEPTH_MAPPING,
+      description: 'Levels of descendants (where the file is used) a focused file shows',
+    },
     graph: { table: { disable: true } },
     onFocusChange: { table: { disable: true } },
   },

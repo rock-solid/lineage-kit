@@ -68,8 +68,8 @@ export const LineageGraph: React.FC<LineageGraphProps> = (props) => (
 const LineageView: React.FC<LineageGraphProps> = ({
   graph = defaultGraph,
   focus: focusProp,
-  upstream: initialUpstream = Infinity,
-  downstream: initialDownstream = Infinity,
+  upstream: upstreamProp = Infinity,
+  downstream: downstreamProp = Infinity,
   onFocusChange,
 }) => {
   const { fitView } = useReactFlow();
@@ -77,8 +77,8 @@ const LineageView: React.FC<LineageGraphProps> = ({
     () => new Set(graph.layers.filter((l) => l.hidden).map((l) => l.id)),
   );
   const [focus, setFocus] = useState(() => resolveFocus(graph, focusProp));
-  const [upstream, setUpstream] = useState(initialUpstream);
-  const [downstream, setDownstream] = useState(initialDownstream);
+  const [upstream, setUpstream] = useState(upstreamProp);
+  const [downstream, setDownstream] = useState(downstreamProp);
   const [hovered, setHovered] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [hideUnlinked, setHideUnlinked] = useState(true);
@@ -89,11 +89,18 @@ const LineageView: React.FC<LineageGraphProps> = ({
   const layers = useMemo(() => new Map(graph.layers.map((l) => [l.id, l])), [graph]);
   const nodesById = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
-  // Follow the prop, so a link from a story (which sets the arg) refocuses an open graph
-  const [syncedFocusProp, setSyncedFocusProp] = useState(focusProp);
-  if (focusProp !== syncedFocusProp) {
-    setSyncedFocusProp(focusProp);
-    setFocus(resolveFocus(graph, focusProp));
+  // Follow the props, so a link from a story or the Controls panel (which set the args) updates an
+  // open graph; the panel's own controls change the state in between
+  const [synced, setSynced] = useState({ focusProp, upstreamProp, downstreamProp });
+  if (focusProp !== synced.focusProp) setFocus(resolveFocus(graph, focusProp));
+  if (upstreamProp !== synced.upstreamProp) setUpstream(upstreamProp);
+  if (downstreamProp !== synced.downstreamProp) setDownstream(downstreamProp);
+  if (
+    focusProp !== synced.focusProp ||
+    upstreamProp !== synced.upstreamProp ||
+    downstreamProp !== synced.downstreamProp
+  ) {
+    setSynced({ focusProp, upstreamProp, downstreamProp });
   }
 
   const focusOn = useCallback(

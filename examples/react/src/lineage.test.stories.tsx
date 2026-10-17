@@ -1,6 +1,7 @@
 import type { LineageGraphData } from '@rock-solid/storybook-addon-lineage';
 import { LineageGraph } from '@rock-solid/storybook-addon-lineage';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 import { expect, waitFor } from 'storybook/test';
 
 // Tests of the viewer on fixture graphs, so they don't change when the example does. `!dev` keeps
@@ -78,6 +79,39 @@ export const Focus: Story = {
     await userEvent.selectOptions(canvas.getByLabelText('Downstream'), '+1');
     await expect(await canvas.findByText('Header+1')).toBeInTheDocument();
     await waitFor(() => expect(node(canvasElement, 'src/page.tsx')).toBeNull());
+  },
+};
+
+/** Depths given as props, as from a link or the Controls panel. */
+export const DepthsFromProps: Story = {
+  args: { graph, focus: 'src/header.tsx', upstream: 0, downstream: 1 },
+  play: async ({ canvas, canvasElement }) => {
+    await expect(await canvas.findByText('Header+1')).toBeInTheDocument();
+    await waitForNode(canvasElement, 'src/grid.tsx');
+    await expect(node(canvasElement, 'src/page.tsx')).toBeNull();
+    await expect(node(canvasElement, 'src/link.tsx')).toBeNull();
+  },
+};
+
+/** Props changed on a mounted graph (what the Controls panel does) update its focus and depths. */
+export const PropsChangeAfterMount: Story = {
+  args: { graph },
+  render: function Render(args) {
+    const [props, setProps] = useState({ focus: 'src/link.tsx', upstream: Infinity });
+    return (
+      <>
+        <button type="button" onClick={() => setProps({ focus: 'src/header.tsx', upstream: 1 })}>
+          Change props
+        </button>
+        <LineageGraph {...args} {...props} />
+      </>
+    );
+  },
+  play: async ({ canvas, userEvent }) => {
+    await expect(await canvas.findByText('+Link+')).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: 'Change props' }));
+    await expect(await canvas.findByText('1+Header+')).toBeInTheDocument();
+    await expect(await canvas.findByText('src/header.tsx')).toBeInTheDocument();
   },
 };
 
