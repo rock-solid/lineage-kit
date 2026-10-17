@@ -1,3 +1,4 @@
+import { layout, trace } from '@rock-solid/lineage-core';
 import { describe, expect, it } from 'vitest';
 
 import type { ContentEdge, ContentGraph, ContentNode } from '../types';
@@ -5,10 +6,10 @@ import {
   adminPath,
   fitPadding,
   forViewer,
-  layoutInput,
+  layoutEdges,
+  LINEAGE_LAYOUT,
   linksToItself,
   STACKED_BELOW,
-  trace,
   visibleGraph,
 } from './model';
 
@@ -100,21 +101,25 @@ describe('trace', () => {
   });
 });
 
-describe('layoutInput', () => {
-  const input = layoutInput(graph.nodes, graph.edges);
-
-  it('leaves self-links out of the layout', () => {
-    expect(input.edges).toHaveLength(4);
-  });
-
+describe('layoutEdges', () => {
   it('ranks blocks and uploads above relationships, so cycles break on the relationship', () => {
     const priority = (source: string, target: string) =>
-      input.edges.find((e) => e.sources[0] === source && e.targets[0] === target)!.layoutOptions[
-        'elk.layered.priority.direction'
-      ];
-    expect(priority('block:hero', 'collection:pages')).toBe('10');
-    expect(priority('collection:media', 'block:hero')).toBe('10');
-    expect(priority('collection:pages', 'block:hero')).toBe('0');
+      layoutEdges(graph.edges).find((e) => e.source === source && e.target === target)!.priority;
+    expect(priority('block:hero', 'collection:pages')).toBe(10);
+    expect(priority('collection:media', 'block:hero')).toBe(10);
+    expect(priority('collection:pages', 'block:hero')).toBe(0);
+  });
+
+  it('puts a block before the page that uses it, even when the page links back to it', async () => {
+    const positions = await layout(
+      graph.nodes.map((n) => ({ id: n.id, width: 200, height: 48 })),
+      layoutEdges(graph.edges),
+      LINEAGE_LAYOUT,
+    );
+    const x = (id: string) => positions.get(id)!.x;
+    expect(x('collection:media')).toBeLessThan(x('block:hero'));
+    expect(x('block:hero')).toBeLessThan(x('collection:pages'));
+    expect(x('collection:pages')).toBeLessThan(x('global:header'));
   });
 });
 

@@ -1,0 +1,44 @@
+/** A link in a lineage graph: `source` is the dependency, `target` what uses it. */
+export type Link = { source: string; target: string };
+
+/** Each node's dependencies (`up`) and the nodes that use it (`down`). */
+export function adjacency(links: readonly Link[]) {
+  const up = new Map<string, string[]>();
+  const down = new Map<string, string[]>();
+  // Appended in place: copying a node's list for each link made a well-linked node quadratic
+  const add = (map: Map<string, string[]>, key: string, value: string) => {
+    const list = map.get(key);
+    if (list) list.push(value);
+    else map.set(key, [value]);
+  };
+  for (const { source, target } of links) {
+    add(up, target, source);
+    add(down, source, target);
+  }
+  return { up, down };
+}
+
+/** Every node reachable from `start` within `maxDepth` steps, not counting `start`. */
+export function walk(start: string, next: Map<string, string[]>, maxDepth = Infinity) {
+  const seen = new Set<string>();
+  let frontier = [start];
+  for (let level = 0; level < maxDepth && frontier.length; level++) {
+    const reached: string[] = [];
+    for (const id of frontier) {
+      for (const to of next.get(id) ?? []) {
+        // Seen as it joins the level, so a node two paths reach is walked once, not once per path
+        if (to === start || seen.has(to)) continue;
+        seen.add(to);
+        reached.push(to);
+      }
+    }
+    frontier = reached;
+  }
+  return seen;
+}
+
+/** `id` and everything upstream and downstream of it, like dbt's `+model+`. */
+export function trace(id: string, links: readonly Link[]): Set<string> {
+  const { up, down } = adjacency(links);
+  return new Set([id, ...walk(id, up), ...walk(id, down)]);
+}

@@ -53,6 +53,7 @@
   "devDependencies": {
     "@payloadcms/next": "3.90.2",
     "@payloadcms/ui": "3.90.2",
+    "@rock-solid/lineage-core": "workspace:*",
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
