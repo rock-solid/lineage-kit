@@ -13,6 +13,23 @@ const links = [
 ];
 const { up, down } = adjacency(links);
 
+describe('adjacency', () => {
+  it('lists each node’s dependencies and users, in link order', () => {
+    expect(up.get('c')).toEqual(['b', 'g']);
+    expect(down.get('b')).toEqual(['c', 'e']);
+    expect(up.get('a')).toBeUndefined();
+  });
+
+  it('grows linearly with a node’s links, not quadratically', () => {
+    // A hub with 100,000 links: copying its list for each link took several seconds
+    const star = Array.from({ length: 100_000 }, (_, i) => ({ source: 'hub', target: `leaf${i}` }));
+    const start = performance.now();
+    const { down: out } = adjacency(star);
+    expect(out.get('hub')).toHaveLength(100_000);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+});
+
 describe('walk', () => {
   it('goes as many levels as asked, not counting the start', () => {
     expect([...walk('b', down, 1)].sort()).toEqual(['c', 'e']);

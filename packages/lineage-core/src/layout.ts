@@ -67,3 +67,26 @@ export async function layout(
   const result = await elk.layout(layoutInput(nodes, edges, options));
   return new Map(result.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }]));
 }
+
+/**
+ * What a layout depends on, as one string: the nodes and their sizes, the edges and the options.
+ * Order doesn't count, so the same graph listed differently (the Storybook addon lists the focused
+ * node first) keeps its layout, and the viewer keeps its pan and zoom.
+ */
+export function layoutKey(
+  nodes: readonly LayoutNode[],
+  edges: readonly LayoutEdge[],
+  { layerSpacing, nodeSpacing, placement }: LayoutOptions,
+) {
+  return [
+    nodes
+      .map((n) => `${n.id}:${n.width}x${n.height}`)
+      .sort()
+      .join('|'),
+    edges
+      .map((e) => `${e.source}>${e.target}:${e.priority ?? 0}`)
+      .sort()
+      .join('|'),
+    `${layerSpacing}/${nodeSpacing}/${placement}`,
+  ].join('#');
+}

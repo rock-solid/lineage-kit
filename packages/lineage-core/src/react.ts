@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   layout,
+  layoutKey,
   type LayoutEdge,
   type LayoutNode,
   type LayoutOptions,
@@ -21,11 +22,7 @@ export function useLayout(
   onLayout?: () => void,
 ): Positions | null {
   const [positions, setPositions] = useState<Positions | null>(null);
-  const key = [
-    nodes.map((n) => `${n.id}:${n.width}x${n.height}`).join('|'),
-    edges.map((e) => `${e.source}>${e.target}:${e.priority ?? 0}`).join('|'),
-    `${options.layerSpacing}/${options.nodeSpacing}/${options.placement}`,
-  ].join('#');
+  const key = layoutKey(nodes, edges, options);
 
   useEffect(() => {
     let cancelled = false;

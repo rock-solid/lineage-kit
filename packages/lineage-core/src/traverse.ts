@@ -5,9 +5,15 @@ export type Link = { source: string; target: string };
 export function adjacency(links: readonly Link[]) {
   const up = new Map<string, string[]>();
   const down = new Map<string, string[]>();
+  // Appended in place: copying a node's list for each link made a well-linked node quadratic
+  const add = (map: Map<string, string[]>, key: string, value: string) => {
+    const list = map.get(key);
+    if (list) list.push(value);
+    else map.set(key, [value]);
+  };
   for (const { source, target } of links) {
-    up.set(target, [...(up.get(target) ?? []), source]);
-    down.set(source, [...(down.get(source) ?? []), target]);
+    add(up, target, source);
+    add(down, source, target);
   }
   return { up, down };
 }

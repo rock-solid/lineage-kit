@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { layout, layoutInput, type LayoutOptions } from './layout';
+import { layout, layoutInput, layoutKey, type LayoutOptions } from './layout';
 
 const options: LayoutOptions = { layerSpacing: 80, nodeSpacing: 16, placement: 'NETWORK_SIMPLEX' };
 const nodes = ['a', 'b', 'c'].map((id) => ({ id, width: 100, height: 40 }));
@@ -36,6 +36,30 @@ describe('layoutInput', () => {
       },
       { id: 'e1', sources: ['b'], targets: ['a'] },
     ]);
+  });
+});
+
+describe('layoutKey', () => {
+  const edges = [
+    { source: 'a', target: 'b' },
+    { source: 'b', target: 'c' },
+  ];
+
+  it('ignores the order of nodes and edges, so the same graph keeps its layout', () => {
+    expect(layoutKey([nodes[2], nodes[0], nodes[1]], [edges[1], edges[0]], options)).toBe(
+      layoutKey(nodes, edges, options),
+    );
+  });
+
+  it('changes when a node, its size, an edge, its priority or the options change', () => {
+    const key = layoutKey(nodes, edges, options);
+    expect(layoutKey(nodes.slice(1), edges, options)).not.toBe(key);
+    expect(layoutKey([{ ...nodes[0], height: 80 }, ...nodes.slice(1)], edges, options)).not.toBe(
+      key,
+    );
+    expect(layoutKey(nodes, edges.slice(1), options)).not.toBe(key);
+    expect(layoutKey(nodes, [{ ...edges[0], priority: 10 }, edges[1]], options)).not.toBe(key);
+    expect(layoutKey(nodes, edges, { ...options, layerSpacing: 90 })).not.toBe(key);
   });
 });
 
