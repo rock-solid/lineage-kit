@@ -15,6 +15,10 @@ used, and what a change affects.
 Install the Storybook addon and add it to `.storybook/main.ts`: see
 [its README](packages/storybook-addon-lineage#-install).
 
+## 🗺️ Roadmap
+
+What's next, known issues, limitations and ideas: see [ROADMAP.md](ROADMAP.md).
+
 ## 🤝 Contributing
 
 Contributions are welcome: bug reports, ideas and pull requests. For anything bigger than a small
