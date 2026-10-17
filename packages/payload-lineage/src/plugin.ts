@@ -20,14 +20,20 @@ export function lineagePlugin({
       ...config,
       onInit: async (payload) => {
         await config.onInit?.(payload);
-        // The sanitized config, so collections other plugins add (e.g. form-builder's) are in it
-        const graph = buildContentGraph(payload.config as PayloadConfigLike, graphOptions);
-        const file = path.resolve(outputFile);
-        await mkdir(path.dirname(file), { recursive: true });
-        await writeFile(file, `${JSON.stringify(graph, null, 2)}\n`);
-        payload.logger.info(
-          `Lineage: wrote ${graph.nodes.length} nodes and ${graph.edges.length} edges to ${outputFile}`,
-        );
+        // A lineage file mustn't stop the admin starting, e.g. on a read-only filesystem, so a
+        // failure is only a warning. The existing onInit's errors still propagate.
+        try {
+          // The sanitized config, so collections other plugins add (e.g. form-builder's) are in it
+          const graph = buildContentGraph(payload.config as PayloadConfigLike, graphOptions);
+          const file = path.resolve(outputFile);
+          await mkdir(path.dirname(file), { recursive: true });
+          await writeFile(file, `${JSON.stringify(graph, null, 2)}\n`);
+          payload.logger.info(
+            `Lineage: wrote ${graph.nodes.length} nodes and ${graph.edges.length} edges to ${outputFile}`,
+          );
+        } catch (err) {
+          payload.logger.warn({ err, msg: `Lineage: couldn't write ${outputFile}` });
+        }
       },
     };
   };
