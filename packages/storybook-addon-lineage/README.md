@@ -10,8 +10,7 @@ Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vit
 
 **👀 Explore**
 
-- A **Lineage** page in the sidebar, added by the addon: every file in the source folder as a node
-  and every import as an edge, read left to right from what a file is built with to where it is used.
+- A **Lineage** page in the sidebar, added by the addon, with no story file to write.
 - **Layers** colour the nodes (UI primitives, components, blocks, pages…), set by path in the addon's
   options. Switch any layer on or off; noisy ones, such as utilities, can start hidden.
 - **Hover** a node to trace its whole lineage: everything upstream and downstream lights up, the rest
@@ -67,6 +66,9 @@ workflow token, once the package grants the repository access). Then:
 ```sh
 pnpm add -D @rock-solid/storybook-addon-lineage
 ```
+
+If the project sets pnpm's `minimumReleaseAge`, a new version can't be installed until it's that
+old; exempt the scope with `minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`.
 
 ## ⚙️ Set up
 

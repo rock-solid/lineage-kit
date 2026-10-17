@@ -45,8 +45,9 @@ export type LineagePluginOptions = ContentGraphOptions & {
   /** Set to `false` to turn the plugin off. Defaults to on. */
   enabled?: boolean;
   /**
-   * The graph as a page in the admin, at `/admin/lineage`, with a link in the nav. Logged-in users
-   * only, and only the collections and globals they can read. Defaults to on.
+   * The Lineage and Data model pages in the admin, at `/admin/lineage` and `/admin/lineage/schema`,
+   * with a link in the nav. For users who can use the admin and pass `access`, showing only the
+   * collections and globals they can read. Defaults to on.
    */
   adminView?: boolean;
   /**

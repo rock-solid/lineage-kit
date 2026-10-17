@@ -1,14 +1,17 @@
 {
   "name": "@rock-solid/payload-lineage",
   "version": "0.0.0",
-  "description": "Content lineage for Payload: the collections, globals and blocks, and the fields that link them, as a page in the admin and as JSON.",
+  "description": "Lineage and data model (ERD) pages for the Payload admin: the collections, globals and blocks, and the fields that link them.",
   "keywords": [
     "payload",
     "payload-plugin",
     "lineage",
-    "dependency-graph"
+    "dependency-graph",
+    "erd"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/rock-solid/lineage-kit/tree/main/packages/payload-lineage#readme",
+  "bugs": "https://github.com/rock-solid/lineage-kit/issues",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rock-solid/lineage-kit.git",

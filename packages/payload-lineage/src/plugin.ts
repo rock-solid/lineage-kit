@@ -8,8 +8,9 @@ import type { ContentGraphOptions, LineageCustomConfig, LineagePluginOptions } f
 const PACKAGE = '@rock-solid/payload-lineage';
 
 /**
- * Adds content lineage to a Payload config: a page in the admin at `/admin/lineage`, and with
- * `outputFile`, the graph as JSON on each start outside production.
+ * Adds content lineage to a Payload config: the Lineage and Data model pages in the admin, at
+ * `/admin/lineage` and `/admin/lineage/schema`, and with `outputFile`, the lineage graph as JSON on
+ * each start outside production.
  */
 export function lineagePlugin({
   enabled = true,
