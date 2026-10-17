@@ -31,8 +31,9 @@ export function contentGraphToMermaid(graph: ContentGraph): string {
 
 /**
  * The data model as an erDiagram: a table per collection and global with its fields, and a line
- * per reference, in crow's-foot notation (`}o--o|` is many-to-one, `}o--o{` many-to-many). Each
- * field and line keeps its full path in its comment or label.
+ * per row and target, in crow's-foot notation (`}o--o|` is many-to-one, `}o--o{` many-to-many).
+ * Fields keep their full path in their comment, and lines are labelled with the full paths of the
+ * references they stand for.
  */
 export function schemaToMermaid(schema: Schema): string {
   const names = entityNames(schema.entities);
@@ -57,8 +58,10 @@ export function schemaToMermaid(schema: Schema): string {
   for (const group of lineGroups.values()) {
     const { from, to, field } = group[0];
     const row = byId.get(from)?.fields.find((f) => f.name === field);
+    // The full paths, so a row's several references (`layout[mediaBlock].media`, …) stay readable
+    const label = [...new Set(group.map((r) => r.path))].join(', ');
     lines.push(
-      `  ${names.get(from)} ${crowsFoot(group, from, !!row?.required)} ${names.get(to)} : "${escapeLabel(field)}"`,
+      `  ${names.get(from)} ${crowsFoot(group, from, !!row?.required)} ${names.get(to)} : "${escapeLabel(label)}"`,
     );
   }
 
@@ -104,17 +107,17 @@ function safeWord(text: string) {
 }
 
 /**
- * Crow's feet from the referencing side: a list is many (`o{`), a single reference one (`o|`, or
- * `||` when required). A global is one document (`||`); a unique reference lets each target be
- * referenced once (`|o`); otherwise many documents can share it (`}o`).
+ * Crow's feet. Beside the target, how many it references: a list is many (`o{`), a single reference
+ * one (`o|`), exactly one (`||`) only when required and to a single collection; a required
+ * polymorphic reference needs one of its collections, not each. Beside the source, how many
+ * reference each target: at most one for a global, which is one document, and for a unique
+ * reference (`|o`); otherwise many (`}o`). Never `||` there: a target needn't be referenced at all.
  */
 function crowsFoot(relations: readonly SchemaRelation[], from: string, required: boolean) {
   const many = relations.some((r) => r.many);
-  const fromSide = from.startsWith('global:')
-    ? '||'
-    : relations.every((r) => r.unique) && !many
-      ? '|o'
-      : '}o';
-  const toSide = many ? 'o{' : required ? '||' : 'o|';
+  const atMostOne = from.startsWith('global:') || (relations.every((r) => r.unique) && !many);
+  const fromSide = atMostOne ? '|o' : '}o';
+  const exactlyOne = required && relations.every((r) => !r.polymorphic);
+  const toSide = many ? 'o{' : exactlyOne ? '||' : 'o|';
   return `${fromSide}--${toSide}`;
 }

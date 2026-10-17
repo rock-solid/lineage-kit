@@ -84,10 +84,10 @@ describe('schemaToMermaid', () => {
 
   it('draws each reference with crow’s feet for its cardinality', () => {
     expect(text).toContain('  pages }o--|| media : "hero.image"');
-    expect(text).toContain('  pages }o--o{ media : "layout"');
+    expect(text).toContain('  pages }o--o{ media : "layout[mediaBlock].media"');
     expect(text).toContain('  pages }o--o| pages : "parent"');
     expect(text).toContain('  pages }o--o{ media : "tags"');
-    expect(text).toContain('  global_header ||--o{ pages : "nav[]"');
+    expect(text).toContain('  global_header |o--o{ pages : "nav[]"');
     expect(text).toContain('  form-submissions |o--o| media : "id"');
   });
 
@@ -98,5 +98,60 @@ describe('schemaToMermaid', () => {
     });
     expect(both).toContain('  header["header"] {');
     expect(both).toContain('  global_header["header"] {');
+  });
+
+  it('labels a row’s line with every full path it stands for', () => {
+    const nested = schemaToMermaid({
+      entities: [
+        entity('collection', 'pages', [{ name: 'layout', type: 'blocks' }]),
+        entity('collection', 'media', []),
+      ],
+      relations: [
+        rel('collection:pages', 'layout', 'collection:media', {
+          many: true,
+          path: 'layout[hero].image',
+        }),
+        rel('collection:pages', 'layout', 'collection:media', {
+          many: true,
+          path: 'layout[gallery].images[].image',
+        }),
+        rel('collection:pages', 'layout', 'collection:media', {
+          many: true,
+          path: 'layout[hero].image',
+        }),
+      ],
+    });
+    expect(nested).toContain(
+      '  pages }o--o{ media : "layout[hero].image, layout[gallery].images[].image"',
+    );
+  });
+
+  it('keeps a required polymorphic reference optional for each of its collections', () => {
+    const either = schemaToMermaid({
+      entities: [
+        entity('collection', 'links', [
+          { name: 'to', type: 'relationship', required: true, relationTo: ['pages', 'media'] },
+        ]),
+        entity('collection', 'pages', []),
+        entity('collection', 'media', []),
+      ],
+      relations: [
+        rel('collection:links', 'to', 'collection:pages', { polymorphic: true }),
+        rel('collection:links', 'to', 'collection:media', { polymorphic: true }),
+      ],
+    });
+    expect(either).toContain('  links }o--o| pages : "to"');
+    expect(either).toContain('  links }o--o| media : "to"');
+  });
+
+  it('marks a global as referencing each target at most once, single or list', () => {
+    const globals = schemaToMermaid({
+      entities: [
+        entity('global', 'footer', [{ name: 'logo', type: 'upload', relationTo: ['media'] }]),
+        entity('collection', 'media', []),
+      ],
+      relations: [rel('global:footer', 'logo', 'collection:media', { kind: 'upload' })],
+    });
+    expect(globals).toContain('  global_footer |o--o| media : "logo"');
   });
 });
