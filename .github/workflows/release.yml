@@ -42,10 +42,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: GitHub Release
-        # Notes from the PRs merged since the package's previous tag
+        # Notes from the PRs merged since the package's previous release: the nearest earlier tag in
+        # this tag's history, not the second-highest, which a later release (or hotfix) would break.
+        # `|| true`: a first release has none.
         run: |
           package="${GITHUB_REF_NAME%@*}"
-          previous="$(git tag --list "${package}@*" --sort=-v:refname | sed -n 2p)"
+          previous="$(git describe --tags --abbrev=0 --match "${package}@*" "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes \
             ${previous:+--notes-start-tag "$previous"}
         env:

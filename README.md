@@ -54,7 +54,7 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
 | `pnpm lint`      | `mise lint`         | ESLint                                                                                   |
 | `pnpm typecheck` | `mise typecheck`    | TypeScript, every package                                                                |
 | `pnpm format`    | `mise format`       | Prettier                                                                                 |
-| `pnpm check`     | `mise check`        | Everything CI checks: format, build, lint, types and tests                               |
+| `pnpm check`     | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build  |
 | `pnpm release …` | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                |
 
 ### 🗂️ Project layout

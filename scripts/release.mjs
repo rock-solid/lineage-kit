@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import semver from 'semver';
 
 const root = path.resolve(import.meta.dirname, '..');
 
@@ -38,8 +39,11 @@ if (values.help || !['prepare', 'tag'].includes(command)) {
   process.exit(values.help ? 0 : 1);
 }
 
-/** Runs a command and returns its output; with `write`, only prints it on a dry run. */
-function run(cmd, args, { write = false } = {}) {
+/**
+ * Runs a command and returns its output; with `write`, only prints it on a dry run. `quiet` hides
+ * its errors, for lookups that are allowed to fail.
+ */
+function run(cmd, args, { write = false, quiet = false } = {}) {
   if (write && dryRun) {
     console.log(`  [dry run] ${cmd} ${args.join(' ')}`);
     return '';
@@ -47,7 +51,7 @@ function run(cmd, args, { write = false } = {}) {
   return execFileSync(cmd, args, {
     cwd: root,
     encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'inherit'],
+    stdio: ['ignore', 'pipe', quiet ? 'ignore' : 'inherit'],
   }).trim();
 }
 
@@ -95,27 +99,31 @@ function tagExists(tag) {
   );
 }
 
+/**
+ * The version to release, with npm's rules (the `semver` package): `patch` after `0.2.0-rc.1` is
+ * `0.2.0`, and an exact version must be valid SemVer as written, so `01.2.3` or `1.2.3-rc_1` fail.
+ */
 function nextVersion(current, bump) {
-  const [major, minor, patch] = current.split('.').map(Number);
-  if (bump === 'major') return `${major + 1}.0.0`;
-  if (bump === 'minor') return `${major}.${minor + 1}.0`;
-  if (bump === 'patch') return `${major}.${minor}.${patch + 1}`;
-  if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(bump ?? ''))
-    fail(`"${bump}" isn't patch, minor, major or a version like 1.2.3.`);
+  if (['patch', 'minor', 'major'].includes(bump)) return semver.inc(current, bump);
+  if (semver.valid(bump ?? '') !== bump) {
+    fail(`"${bump}" isn't patch, minor, major or a valid version like 1.2.3 or 1.2.3-rc.1.`);
+  }
   return bump;
 }
 
-/** True when a is a higher version than b (pre-release suffixes count as lower). */
-function isHigher(a, b) {
-  const parts = (v) => v.split('-')[0].split('.').map(Number);
-  const [pa, pb] = [parts(a), parts(b)];
-  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] > pb[i];
-  return !a.includes('-') && b.includes('-');
-}
-
-/** The package's commits since its last release tag (or since the start, for a first release). */
+/**
+ * The package's commits since its last release tag (or since the start, for a first release). The
+ * last tag is the nearest one in main's history, not the highest, which could be a later hotfix.
+ */
 function changesSinceLastTag(folder) {
-  const lastTag = run('git', ['tag', '--list', `${folder}@*`, '--sort=-v:refname']).split('\n')[0];
+  let lastTag = '';
+  try {
+    lastTag = run('git', ['describe', '--tags', '--abbrev=0', '--match', `${folder}@*`, 'HEAD'], {
+      quiet: true,
+    });
+  } catch {
+    // No release tag yet
+  }
   const range = lastTag ? [`${lastTag}..HEAD`] : [];
   const log = run('git', ['log', '--format=- %s', ...range, '--', `packages/${folder}`]);
   return { lastTag, log: log || '- (no commits touch the package)' };
@@ -126,8 +134,9 @@ const current = pkg.json.version;
 
 if (command === 'prepare') {
   assertOnUpToDateMain();
+  if (!semver.valid(current)) fail(`The current version, ${current}, isn't valid SemVer.`);
   const version = nextVersion(current, bump);
-  if (!isHigher(version, current)) fail(`${version} isn't higher than the current ${current}.`);
+  if (!semver.gt(version, current)) fail(`${version} isn't higher than the current ${current}.`);
   const tag = `${pkg.folder}@${version}`;
   if (tagExists(tag)) fail(`${tag} is already tagged.`);
 

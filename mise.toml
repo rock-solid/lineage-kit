@@ -35,7 +35,7 @@ description = "Format with Prettier"
 run = "pnpm format"
 
 [tasks.check]
-description = "Everything CI checks: format, build, lint, types and tests"
+description = "Everything CI checks: format, build, lint, types, tests and the example Storybook build"
 run = "pnpm check"
 
 [tasks.release]
