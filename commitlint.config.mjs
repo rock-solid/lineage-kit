@@ -3,7 +3,7 @@
 // checked, like config-conventional's subject-case, so proper nouns later in the subject pass
 // (`add GitHub login`).
 // The commit-msg hook uses this file. CI checks PR titles against it too, with commitlint's default
-// ignores off (rock-solid/github-actions pr-title-lint); the hook keeps them for `fixup!` commits.
+// ignores off (commitlint.pr-title.config.mjs); the hook keeps them for `fixup!` commits.
 const SUBJECT = /^(?:[A-Z][A-Z0-9]+-\d+ \| )?[a-z0-9].*$/;
 
 export default {
