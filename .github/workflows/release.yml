@@ -1,63 +1,110 @@
 name: Release
 
-# Publishes a package when its version is tagged, e.g. `storybook-addon-lineage@0.2.0`. Tag with
-# `pnpm release tag` (see the README); the tag must match the package's version.
+# Releases with Changesets (see the README). On each push to main, one of two things happens:
+# - changesets waiting in .changeset/: open or update the "Version Packages" PR, which bumps the
+#   versions and writes the changelogs
+# - that PR just merged: build, pack and publish the new versions to npmjs.com, tag them and
+#   create their GitHub Releases
+# Adapted to pnpm from Changesets' trusted-publishing workflow: each job gets only the permissions
+# it needs, and only `publish` can publish, with no npm token (OIDC).
 on:
   push:
-    tags: ['storybook-addon-lineage@*']
+    branches: [main]
 
-# `bash` rather than the default `bash -e`: it adds `-o pipefail`, so a failing command in a pipe
-# (`gh api … | sed`) fails the step instead of being masked
-defaults:
-  run:
-    shell: bash
+permissions: {}
 
-permissions:
-  # contents: write for the GitHub Release
-  contents: write
-  packages: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  publish:
-    name: Publish to GitHub Packages
+  select-mode:
     runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+      publish-plan-artifact-id: ${{ steps.select-mode.outputs.publish-plan-artifact-id }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
         with:
-          # All tags, to find the package's previous release for the notes
-          fetch-depth: 0
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://npm.pkg.github.com
-          scope: '@rock-solid'
       - run: pnpm install --frozen-lockfile
-      - name: Check the tag matches the version
-        working-directory: packages/storybook-addon-lineage
-        run: |
-          version="$(node -p 'require("./package.json").version')"
-          test "${GITHUB_REF_NAME}" = "storybook-addon-lineage@${version}" || {
-            echo "Tag ${GITHUB_REF_NAME} doesn't match version ${version}"
-            exit 1
-          }
+      - name: Select Changesets mode
+        id: select-mode
+        uses: changesets/action/select-mode@v2
+
+  version:
+    if: needs.select-mode.outputs.mode == 'version'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # commit the version changes
+      pull-requests: write # open the Version Packages PR
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          # No dependency cache in jobs that write: it could be poisoned
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Version packages
+        uses: changesets/action/version@v2
+        with:
+          # A PR opened with this token doesn't trigger CI; close and reopen it to run the checks
+          pr-title: 'chore(release): version packages'
+          commit-message: 'chore(release): version packages'
+
+  pack:
+    if: needs.select-mode.outputs.mode == 'publish'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    outputs:
+      pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Publish
-        run: pnpm --filter @rock-solid/storybook-addon-lineage publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: GitHub Release
-        # Notes from the PRs merged since the package's previous release: the nearest earlier tag in
-        # this tag's history, not the second-highest, which a later release (or hotfix) would break.
-        # `|| true`: a first release has none. Each PR's full URL in GitHub's generated notes becomes
-        # a `[#12](url)` link: a bare `#12` isn't linked in a release body.
-        run: |
-          package="${GITHUB_REF_NAME%@*}"
-          previous="$(git describe --tags --abbrev=0 --match "${package}@*" "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
-          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -f tag_name="$GITHUB_REF_NAME" \
-            ${previous:+-f previous_tag_name="$previous"} --jq .body \
-            | sed -E "s|(https://github.com/${GITHUB_REPOSITORY}/pull/([0-9]+))|[#\2](\1)|g" > release-notes.md
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Pack packages
+        id: pack
+        uses: changesets/action/pack@v2
+        with:
+          publish-plan-artifact-id: ${{ needs.select-mode.outputs.publish-plan-artifact-id }}
+
+  publish:
+    needs: pack
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # tags and GitHub Releases
+      id-token: write # npm trusted publishing, which also adds provenance
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Publish packages
+        uses: changesets/action/publish@v2
+        with:
+          pack-dir-artifact-id: ${{ needs.pack.outputs.pack-dir-artifact-id }}

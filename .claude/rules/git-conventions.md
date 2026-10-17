@@ -48,3 +48,12 @@ you saw; mark steps you didn't run as _for the reviewer_. Never present an unrun
 CI checks PR titles, and where the repo has a `commit-msg` hook, commitlint checks commits. When
 either rejects a message, fix the message. **Never bypass hooks** with `--no-verify`, `-n` or
 `LEFTHOOK=0`.
+
+## Changesets
+
+A PR that changes what a published package does (`packages/storybook-addon-lineage`,
+`packages/payload-lineage`, or `packages/lineage-core`, which is built into both) adds a changeset
+with `pnpm changeset`, or by writing `.changeset/<name>.md` directly: the packages, the bump
+(`patch` for fixes, `minor` for features while below 1.0) and one changelog line for users. Docs,
+tests, CI and examples need none. Never edit versions or `CHANGELOG.md` by hand; the Version
+Packages PR does that.

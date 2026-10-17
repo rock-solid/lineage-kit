@@ -7,27 +7,22 @@ open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                             |                                                                      |
-| ------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | On trial in a client project                                         |
-| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published     | Lineage and Data model pages in the admin, tried on a client project |
+| Package                               | Version                                                |                                                                      |
+| ------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
+| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private); next on npmjs.com | On trial in a client project                                         |
+| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published                        | Lineage and Data model pages in the admin, tried on a client project |
 
 ## 🌐 Whole repo
 
 ### 🚀 Now
 
-- **Decide how projects install the packages.** GitHub Packages needs a token wherever pnpm
-  installs: every developer, every CI job and every Docker build, because pnpm 12's supply-chain
-  check fetches the package's metadata ([Known issues](#-known-issues)). Publishing publicly on
-  npmjs.com removes all of that.
+- **Go public on npmjs.com.** Releases already use Changesets and publish there with trusted
+  publishing; what's left: the `@rock-solid` org on npmjs.com, a trusted publisher for each package,
+  the repo made public, then merging the first Version Packages PR (see the README's
+  [Releasing](README.md#-releasing)).
 
 ### ⏭️ Next
 
-- **Public release on npmjs.com:** check that the `@rock-solid` npm org is free, make the repo public,
-  switch the Release workflow's registry.
-- **Release more than one package.** The Release workflow only handles `storybook-addon-lineage@*`
-  tags and publishes that package; widen its tag and publish filters so `payload-lineage@0.1.0` can
-  ship.
 - **More in the shared core.** `packages/lineage-core` holds the traversal and the ELK layout; the
   React Flow canvases (hover tracing, fit-to-view, the minimap) are still written twice, once per
   tool, and are the next candidates.
@@ -45,13 +40,12 @@ open an issue to suggest or question anything here.
 
 ### 🐞 Known issues
 
-- **Installs need a GitHub token.** Beyond `pnpm install`, pnpm re-checks the lockfile's
-  supply-chain policy on fresh clones and after lockfile or workspace changes, and that check also
-  needs the token. Until then even a project's Storybook tests fail with a 401 in CI.
+- **Installing 0.1.1 or earlier needs a GitHub token:** those versions are on GitHub Packages only.
+  Beyond `pnpm install`, pnpm re-checks the lockfile's supply-chain policy on fresh clones and after
+  lockfile or workspace changes, and that check needs the token too; without it, even a project's
+  Storybook tests fail with a 401 in CI.
 - **New versions are blocked by pnpm's minimum release age** unless the project exempts the scope
   (`minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`).
-- **The release log warns "Skipped OIDC"**: pnpm tries OIDC provenance first, which GitHub Packages
-  doesn't use. Harmless.
 
 ## 📚 Storybook addon
 
@@ -138,8 +132,8 @@ globals, 22 blocks); `examples/payload` is a small one to develop against.
 
 ### 🚀 Now
 
-- **First release, 0.1.0,** once the repo-wide install decision and the Release workflow for more
-  than one package are done (see [Whole repo](#-whole-repo)).
+- **First release, 0.1.0,** with the move to npmjs.com (see [Whole repo](#-whole-repo)); its
+  changeset is waiting in `.changeset/`.
 
 ### ⏭️ Next
 
