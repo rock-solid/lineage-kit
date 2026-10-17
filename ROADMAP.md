@@ -28,9 +28,9 @@ open an issue to suggest or question anything here.
 - **Release more than one package.** The Release workflow only handles `storybook-addon-lineage@*`
   tags and publishes that package; widen its tag and publish filters so `payload-lineage@0.1.0` can
   ship.
-- **One graph package for both tools.** The ELK layout, the traversal and the React Flow parts are
-  written twice, in the Storybook addon and the Payload plugin; move the shared parts into one
-  package.
+- **More in the shared core.** `packages/lineage-core` holds the traversal and the ELK layout; the
+  React Flow canvases (hover tracing, fit-to-view, the minimap) are still written twice, once per
+  tool, and are the next candidates.
 - **Export a view as an image or a Mermaid diagram,** for docs, PRs and tickets. One Export button
   on each page, exporting what's on screen, with its filters and focus:
   - **PNG or SVG** of the canvas, in the current theme.

@@ -15,21 +15,21 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import ELK from 'elkjs/lib/elk.bundled.js';
+import { trace } from '@rock-solid/lineage-core';
+import { useLayout } from '@rock-solid/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
 import {
   fitPadding,
-  layoutInput,
+  layoutEdges,
+  LINEAGE_LAYOUT,
   linksToItself,
   NODE_HEIGHT,
   NODE_WIDTH,
-  trace,
   visibleGraph,
 } from './model';
 
-const elk = new ELK();
 const KINDS: { kind: ContentKind; label: string }[] = [
   { kind: 'collection', label: 'Collections' },
   { kind: 'block', label: 'Blocks' },
@@ -70,7 +70,6 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
   const [hideUnconnected, setHideUnconnected] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [positions, setPositions] = useState<Map<string, { x: number; y: number }> | null>(null);
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
   const visible = useMemo(
@@ -78,23 +77,20 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
     [graph, hiddenKinds, hideUnconnected],
   );
 
-  // Lay out only when the set of nodes changes, not on hover
-  const layoutKey = visible.nodes.map((n) => n.id).join('|');
-  useEffect(() => {
-    let cancelled = false;
-    elk.layout(layoutInput(visible.nodes, visible.edges)).then((layout) => {
-      if (cancelled) return;
-      setPositions(new Map(layout.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }])));
-      // Leave room on the right for the details panel
+  // Lays out again only when the nodes or links change, not on hover
+  const positions = useLayout(
+    useMemo(
+      () => visible.nodes.map((n) => ({ id: n.id, width: NODE_WIDTH, height: NODE_HEIGHT })),
+      [visible.nodes],
+    ),
+    useMemo(() => layoutEdges(visible.edges), [visible.edges]),
+    LINEAGE_LAYOUT,
+    // Leave room on the right for the details panel when it's beside the graph
+    () =>
       requestAnimationFrame(() =>
         fitView({ padding: fitPadding(layoutRef.current?.clientWidth ?? 0) }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- layoutKey stands in for visible
-  }, [layoutKey, fitView]);
+      ),
+  );
 
   const traced = useMemo(
     () => (hovered ? trace(hovered, visible.edges) : null),

@@ -1,5 +1,7 @@
 // What the ERD shows of a schema, kept free of React so it can be tested on its own.
 
+import type { LayoutOptions } from '@rock-solid/lineage-core';
+
 import type { Schema, SchemaEntity, SchemaField, SchemaRelation } from '../schema';
 
 export const TABLE_WIDTH = 260;
@@ -119,24 +121,12 @@ export function tableHeight(rows: number, hidden: number) {
   return HEADER_HEIGHT + rows * ROW_HEIGHT + (hidden ? FOOTER_HEIGHT : 0) + 4;
 }
 
-/** The ELK graph: tables sized to their rows, referencing tables on the left. */
-export function erdLayoutInput(
-  tables: { id: string; height: number }[],
-  edges: readonly ErdEdge[],
-) {
-  return {
-    id: 'root',
-    layoutOptions: {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'RIGHT',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '110',
-      'elk.spacing.nodeNode': '28',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-    },
-    children: tables.map((t) => ({ id: t.id, width: TABLE_WIDTH, height: t.height })),
-    edges: edges.map((e) => ({ id: e.id, sources: [e.from], targets: [e.to] })),
-  };
-}
+/** Wider gaps than the lineage page: tables are taller, and the lines carry labels. */
+export const ERD_LAYOUT: LayoutOptions = {
+  layerSpacing: 110,
+  nodeSpacing: 28,
+  placement: 'NETWORK_SIMPLEX',
+};
 
 /**
  * Collections and globals the viewer can't read leave the schema, with every relation to or from

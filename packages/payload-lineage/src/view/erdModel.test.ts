@@ -4,7 +4,6 @@ import type { SchemaEntity, SchemaRelation } from '../schema';
 import {
   describeCardinality,
   erdEdges,
-  erdLayoutInput,
   ROW_LIMIT,
   schemaForViewer,
   selfReferences,
@@ -113,12 +112,7 @@ describe('visibleRows', () => {
 describe('layout and access', () => {
   it('sizes tables to their rows, with room for "+N more"', () => {
     expect(tableHeight(3, 0)).toBeLessThan(tableHeight(3, 5));
-    const input = erdLayoutInput([{ id: 'collection:pages', height: 120 }], erdEdges(relations));
-    expect(input.children[0]).toMatchObject({ height: 120 });
-    expect(input.edges.map((e) => e.sources[0] + '>' + e.targets[0])).toEqual([
-      'collection:pages>collection:media',
-      'collection:pages>collection:media',
-    ]);
+    expect(tableHeight(4, 0) - tableHeight(3, 0)).toBe(tableHeight(5, 0) - tableHeight(4, 0));
   });
 
   it('drops the names of collections the viewer can’t read from the fields that point at them', () => {

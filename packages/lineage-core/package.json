@@ -1,0 +1,27 @@
+{
+  "name": "@rock-solid/lineage-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What the Storybook addon and the Payload plugin share: walking a graph's links, and laying it out with ELK. Not published; each package's build includes it.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "elkjs": "0.12.0",
+    "react": "19.2.6",
+    "typescript": "5.7.3",
+    "vitest": "4.0.18"
+  },
+  "peerDependencies": {
+    "elkjs": "0.12.0",
+    "react": "^18.0.0 || ^19.0.0"
+  }
+}
