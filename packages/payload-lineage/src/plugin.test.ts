@@ -48,17 +48,17 @@ describe('lineagePlugin', () => {
     });
     expect(result.admin?.components?.afterNavLinks).toEqual([
       '/Mine#Link',
-      '@rock-solid/payload-lineage/rsc#LineageNavLink',
+      '@rocksoliddigital/payload-lineage/rsc#LineageNavLink',
     ]);
     expect(result.admin?.components?.views).toEqual({
       mine: { Component: '/Mine', path: '/mine' },
       lineage: {
-        Component: '@rock-solid/payload-lineage/rsc#LineageView',
+        Component: '@rocksoliddigital/payload-lineage/rsc#LineageView',
         exact: true,
         path: '/lineage',
       },
       lineageSchema: {
-        Component: '@rock-solid/payload-lineage/rsc#SchemaView',
+        Component: '@rocksoliddigital/payload-lineage/rsc#SchemaView',
         exact: true,
         path: '/lineage/schema',
       },

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
-import { lineagePlugin } from '@rock-solid/payload-lineage';
+import { lineagePlugin } from '@rocksoliddigital/payload-lineage';
 import { buildConfig } from 'payload';
 
 import { CallToAction, MediaBlock, PostList } from './blocks';

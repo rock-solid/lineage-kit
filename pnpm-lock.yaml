@@ -211,7 +211,7 @@ importers:
       '@payloadcms/ui':
         specifier: 3.90.2
         version: 3.90.2(@types/react@19.2.14)(monaco-editor@0.57.0)(next@16.3.3(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@22.19.9)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(graphql@16.14.2)(supports-color@7.2.0)(typescript@5.7.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(supports-color@7.2.0)(typescript@5.7.3)
-      '@rock-solid/payload-lineage':
+      '@rocksoliddigital/payload-lineage':
         specifier: workspace:*
         version: link:../../packages/payload-lineage
       graphql:
@@ -255,7 +255,7 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
     devDependencies:
-      '@rock-solid/storybook-addon-lineage':
+      '@rocksoliddigital/storybook-addon-lineage':
         specifier: workspace:*
         version: link:../../packages/storybook-addon-lineage
       '@storybook/addon-a11y':
@@ -334,7 +334,7 @@ importers:
       '@payloadcms/ui':
         specifier: 3.90.2
         version: 3.90.2(@types/react@19.2.14)(monaco-editor@0.57.0)(next@16.3.3(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@22.19.9)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(graphql@16.14.2)(supports-color@7.2.0)(typescript@5.7.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(supports-color@7.2.0)(typescript@5.7.3)
-      '@rock-solid/lineage-core':
+      '@rocksoliddigital/lineage-core':
         specifier: workspace:*
         version: link:../lineage-core
       '@types/node':
@@ -389,7 +389,7 @@ importers:
         specifier: ^18.0.0 || ^19.0.0
         version: 19.2.6(react@19.2.6)
     devDependencies:
-      '@rock-solid/lineage-core':
+      '@rocksoliddigital/lineage-core':
         specifier: workspace:*
         version: link:../lineage-core
       '@storybook/react':

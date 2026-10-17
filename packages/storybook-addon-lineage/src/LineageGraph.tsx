@@ -15,8 +15,8 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { adjacency, walk, type LayoutOptions } from '@rock-solid/lineage-core';
-import { useLayout } from '@rock-solid/lineage-core/react';
+import { adjacency, walk, type LayoutOptions } from '@rocksoliddigital/lineage-core';
+import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';

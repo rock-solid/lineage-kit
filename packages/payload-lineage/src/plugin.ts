@@ -5,7 +5,7 @@ import type { Config, Plugin } from 'payload';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 import type { ContentGraphOptions, LineageCustomConfig, LineagePluginOptions } from './types';
 
-const PACKAGE = '@rock-solid/payload-lineage';
+const PACKAGE = '@rocksoliddigital/payload-lineage';
 
 /**
  * Adds content lineage to a Payload config: the Lineage and Data model pages in the admin, at

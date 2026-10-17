@@ -1,4 +1,4 @@
-import { layout, trace } from '@rock-solid/lineage-core';
+import { layout, trace } from '@rocksoliddigital/lineage-core';
 import { describe, expect, it } from 'vitest';
 
 import type { ContentEdge, ContentGraph, ContentNode } from '../types';

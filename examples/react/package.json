@@ -13,7 +13,7 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@rock-solid/storybook-addon-lineage": "workspace:*",
+    "@rocksoliddigital/storybook-addon-lineage": "workspace:*",
     "@storybook/addon-a11y": "10.6.1",
     "@storybook/addon-docs": "10.6.1",
     "@storybook/addon-vitest": "10.6.1",

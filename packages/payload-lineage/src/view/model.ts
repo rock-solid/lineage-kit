@@ -1,6 +1,6 @@
 // What the admin view shows of a graph, kept free of React so it can be tested on its own.
 
-import type { LayoutEdge, LayoutOptions } from '@rock-solid/lineage-core';
+import type { LayoutEdge, LayoutOptions } from '@rocksoliddigital/lineage-core';
 
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
 

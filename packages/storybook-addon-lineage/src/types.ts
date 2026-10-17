@@ -10,7 +10,7 @@ export type LayerConfig = {
   hidden?: boolean;
 };
 
-/** The addon's options, set in `.storybook/main.ts`: `{ name: '@rock-solid/storybook-addon-lineage', options }`. */
+/** The addon's options, set in `.storybook/main.ts`: `{ name: '@rocksoliddigital/storybook-addon-lineage', options }`. */
 export type LineageOptions = {
   /** Folder to scan, relative to the project root (the folder above `.storybook`). Defaults to `src`. */
   srcDir?: string;

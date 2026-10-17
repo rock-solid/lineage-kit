@@ -5,7 +5,7 @@ import type { InlineConfig } from 'vite';
 import type { LineageOptions } from './types';
 import { lineagePlugin } from './vite-plugin';
 
-const PACKAGE_NAME = '@rock-solid/storybook-addon-lineage';
+const PACKAGE_NAME = '@rocksoliddigital/storybook-addon-lineage';
 
 // Storybook passes the addon's `options` (from main.ts) to each preset function, next to its own
 // options such as `configDir`.

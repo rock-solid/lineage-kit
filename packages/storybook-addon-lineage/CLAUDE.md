@@ -1,4 +1,4 @@
-# @rock-solid/storybook-addon-lineage
+# @rocksoliddigital/storybook-addon-lineage
 
 The Storybook addon: a Lineage page with the import graph of a project's files. Users' docs:
 [README.md](README.md).

@@ -7,17 +7,17 @@ open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                                                |                                                                      |
-| ------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private); next on npmjs.com | On trial in a client project                                         |
-| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published                        | Lineage and Data model pages in the admin, tried on a client project |
+| Package                                     | Version                                                                  |                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `@rocksoliddigital/storybook-addon-lineage` | 0.1.1 as `@rock-solid/…` on GitHub Packages (private); next on npmjs.com | On trial in a client project                                         |
+| `@rocksoliddigital/payload-lineage`         | 0.0.0, in `main`, not published                                          | Lineage and Data model pages in the admin, tried on a client project |
 
 ## 🌐 Whole repo
 
 ### 🚀 Now
 
 - **Go public on npmjs.com.** Releases already use Changesets and publish there with trusted
-  publishing; what's left: the `@rock-solid` org on npmjs.com, a trusted publisher for each package,
+  publishing; what's left: the `@rocksoliddigital` org on npmjs.com, a trusted publisher for each package,
   the repo made public, then merging the first Version Packages PR (see the README's
   [Releasing](README.md#-releasing)).
 
@@ -40,16 +40,17 @@ open an issue to suggest or question anything here.
 
 ### 🐞 Known issues
 
-- **Installing 0.1.1 or earlier needs a GitHub token:** those versions are on GitHub Packages only.
+- **Installing 0.1.1 or earlier needs a GitHub token:** those versions are on GitHub Packages only,
+  as `@rock-solid/storybook-addon-lineage` (npm's `@rock-solid` scope belongs to someone else).
   Beyond `pnpm install`, pnpm re-checks the lockfile's supply-chain policy on fresh clones and after
   lockfile or workspace changes, and that check needs the token too; without it, even a project's
   Storybook tests fail with a 401 in CI.
 - **New versions are blocked by pnpm's minimum release age** unless the project exempts the scope
-  (`minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`).
+  (`minimumReleaseAgeExclude: ['@rocksoliddigital/*']` in `pnpm-workspace.yaml`).
 
 ## 📚 Storybook addon
 
-`@rock-solid/storybook-addon-lineage`: the import graph of your components, as a page in Storybook.
+`@rocksoliddigital/storybook-addon-lineage`: the import graph of your components, as a page in Storybook.
 
 ### ⏭️ Next
 
@@ -126,7 +127,7 @@ Not committed to; open an issue if one would help you.
 
 ## 🧬 Payload plugin
 
-`@rock-solid/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
+`@rocksoliddigital/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
 and Data model pages in the admin. Tried on a client project (Payload 3.90, 8 collections, 2
 globals, 22 blocks); `examples/payload` is a small one to develop against.
 

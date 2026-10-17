@@ -1,4 +1,4 @@
-# 🧬 @rock-solid/payload-lineage
+# 🧬 @rocksoliddigital/payload-lineage
 
 The content side of lineage, from a Payload config, as two pages in the admin:
 
@@ -33,7 +33,7 @@ Not published yet: the first release, 0.1.0, is on the
 [roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin). Then:
 
 ```sh
-pnpm add @rock-solid/payload-lineage
+pnpm add @rocksoliddigital/payload-lineage
 ```
 
 ## ⚙️ Set up
@@ -41,7 +41,7 @@ pnpm add @rock-solid/payload-lineage
 Add the plugin to `payload.config.ts`:
 
 ```ts
-import { lineagePlugin } from '@rock-solid/payload-lineage';
+import { lineagePlugin } from '@rocksoliddigital/payload-lineage';
 
 export default buildConfig({
   // ...
@@ -88,7 +88,7 @@ lineagePlugin({
 Or build either yourself, e.g. in a script:
 
 ```ts
-import { buildContentGraph, buildSchema } from '@rock-solid/payload-lineage';
+import { buildContentGraph, buildSchema } from '@rocksoliddigital/payload-lineage';
 import config from '@payload-config';
 
 const graph = buildContentGraph(await config);
