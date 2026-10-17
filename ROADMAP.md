@@ -45,7 +45,7 @@ open an issue to suggest or question anything here.
 
 - **Installs need a GitHub token.** Beyond `pnpm install`, pnpm re-checks the lockfile's
   supply-chain policy on fresh clones and after lockfile or workspace changes, and that check also
-  needs the token. Until then even `pnpm test:storybook` fails with a 401.
+  needs the token. Until then even a project's Storybook tests fail with a 401 in CI.
 - **New versions are blocked by pnpm's minimum release age** unless the project exempts the scope
   (`minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`).
 - **The release log warns "Skipped OIDC"**: pnpm tries OIDC provenance first, which GitHub Packages
@@ -132,7 +132,7 @@ Not committed to; open an issue if one would help you.
 
 `@rock-solid/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
 and Data model pages in the admin. Tried on a client project (Payload 3.90, 8 collections, 2
-globals, 22 blocks).
+globals, 22 blocks); `examples/payload` is a small one to develop against.
 
 ### 🚀 Now
 
@@ -167,7 +167,7 @@ globals, 22 blocks).
 ### 🔭 Later
 
 - **Shared field configs,** found by import scan, since Payload inlines fields: which blocks and
-  collections use `link`, `linkGroup` or `sectionHeaderFields`.
+  collections use a shared field such as a `link` group.
 - **A drift check** against hand-written inventories, such as a "page layouts and components" or a
   content model doc, in CI.
 - **Pending database changes:** compare the config with the latest migration snapshot
@@ -178,8 +178,6 @@ globals, 22 blocks).
 - **Links inside rich text are missing** from both pages (see Next).
 - **Form-builder's field blocks crowd the lineage graph** (`checkbox`, `email`, `text`, …) unless
   listed in `exclude`.
-- **A build needs `payload generate:importmap`** after installing or upgrading; `next dev` does it on
-  its own.
 - **ERD sentences use the config's labels,** so an uncountable singular ("a Media") or a plural that
   isn't one ("many Team") reads oddly. Setting `labels` on the collection fixes it, in the admin too.
 

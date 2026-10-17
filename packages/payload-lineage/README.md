@@ -7,35 +7,34 @@ The content side of lineage, from a Payload config, as two pages in the admin:
   `block:mediaBlock` → `pages`. Hover a node to trace everything upstream and downstream; click it
   for the fields behind each link.
 - **Data model** (`/admin/lineage/schema`): an ERD, with a table per collection and global listing
-  its fields, and a line from each field that references another collection, labelled
-  `many-to-one` (one reference per document, which many documents can share), `many-to-many` (a
-  list: `hasMany`, or inside an array or blocks field) or `one-to-one` (a `unique` reference). A
-  global is a single document, so its references are `one-to-one` or `one-to-many`.
+  its fields, and a line from each field that references another collection, labelled with its
+  cardinality:
+
+| Label          | Means                                                                     |
+| -------------- | ------------------------------------------------------------------------- |
+| `many-to-one`  | One reference per document, which many documents can share                |
+| `many-to-many` | A list of references: `hasMany`, or inside an array or blocks field       |
+| `one-to-one`   | A `unique` reference, or a global's single one (a global is one document) |
+| `one-to-many`  | A global's list of references                                             |
 
 Both are built from the running config on each visit (well under a millisecond), so they are never
-out of date. A "Lineage" link in the nav opens them.
+out of date. A "Lineage" link in the nav opens them. To try them, run the
+[example](https://github.com/rock-solid/lineage-kit/tree/main/examples/payload).
 
-## 🔒 Access
-
-The pages and their nav link are for users who can use the admin (Payload's `access.admin` on the
-users collection, which Payload itself doesn't check on custom pages), and who pass the plugin's
-`access`, if set:
-
-```ts
-lineagePlugin({ access: ({ user }) => user.role === 'admin' });
-```
-
-Anyone else is sent where Payload sends them for its own pages: the login page when logged out, the
-unauthorized page when logged in, each with a `redirect` back. The pages show only the collections
-and globals the user can read, along with every link to or from them; blocks have no access control
-of their own, so they're all shown. Everything is checked and built on the server, so nothing a user
-can't see reaches the browser.
-
-Works with Payload 3 on Next.js 15 or 16.
+Works with Payload 3 on Next.js 15 or 16, with React 19.
 
 > **Status:** early. Both pages come from the config only. Which pages use which blocks (from the
 > documents), shared field configs (by import scan) and merging into the Storybook page are next;
-> see the [roadmap](../../ROADMAP.md#-payload-plugin).
+> see the [roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin).
+
+## 📥 Install
+
+Not published yet: the first release, 0.1.0, is on the
+[roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin). Then:
+
+```sh
+pnpm add @rock-solid/payload-lineage
+```
 
 ## ⚙️ Set up
 
@@ -95,6 +94,22 @@ import config from '@payload-config';
 const graph = buildContentGraph(await config);
 const schema = buildSchema(await config);
 ```
+
+## 🔒 Access
+
+The pages and their nav link are for users who can use the admin (Payload's `access.admin` on the
+users collection, which Payload itself doesn't check on custom pages), and who pass the plugin's
+`access`, if set:
+
+```ts
+lineagePlugin({ access: ({ user }) => user.role === 'admin' });
+```
+
+Anyone else is sent where Payload sends them for its own pages: the login page when logged out, the
+unauthorized page when logged in, each with a `redirect` back. The pages show only the collections
+and globals the user can read, along with every link to or from them; blocks have no access control
+of their own, so they're all shown. Everything is checked and built on the server, so nothing a user
+can't see reaches the browser.
 
 ## 📄 The lineage file
 
