@@ -105,10 +105,18 @@ git switch main && git pull
 pnpm release tag
 ```
 
-That tags `main` as `<package>@<version>`, e.g. `storybook-addon-lineage@0.2.0`. The Release
-workflow checks the tag matches the version, publishes the package to GitHub Packages and creates a
-GitHub Release with notes from the merged PRs. Add `--dry-run` to either step to see what it would
-do, and `--package <name>` once the repo has more than one package.
+That tags `main` as `<package>@<version>`, e.g. `payload-lineage@0.1.0`. The Release workflow
+checks the tag matches the version, publishes the package and creates a GitHub Release with notes
+from the merged PRs. A prerelease such as `0.2.0-rc.1` is published under the `next` dist-tag, so
+`pnpm add` keeps installing the latest stable version. Add `--dry-run` to either step to see what it
+would do. The repo has more than one package, so both steps take `--package <folder>`, e.g.
+`pnpm release prepare minor --package payload-lineage`.
+
+Each package publishes where its `publishConfig.registry` says, GitHub Packages or npmjs.com (the
+default), so moving one is a change to its `package.json`. On npmjs.com, the first publish of a
+package uses an `NPM_TOKEN` repository secret; after that, set the Release workflow up as the
+package's trusted publisher on npmjs.com and delete the secret: publishes then need no token and
+carry provenance.
 
 ## 📄 License
 

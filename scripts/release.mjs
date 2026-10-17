@@ -8,7 +8,7 @@
 // nothing). The tag is `<package folder>@<version>`, e.g. `storybook-addon-lineage@0.2.0`; the
 // Release workflow publishes on it.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import semver from 'semver';
@@ -64,10 +64,13 @@ function fail(message) {
 function findPackage(name) {
   const packages = readdirSync(path.join(root, 'packages'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const file = path.join(root, 'packages', entry.name, 'package.json');
-      return { folder: entry.name, file, json: JSON.parse(readFileSync(file, 'utf8')) };
-    })
+    .map((entry) => ({
+      folder: entry.name,
+      file: path.join(root, 'packages', entry.name, 'package.json'),
+    }))
+    // A folder another branch left behind (only node_modules) isn't a package
+    .filter(({ file }) => existsSync(file))
+    .map((pkg) => ({ ...pkg, json: JSON.parse(readFileSync(pkg.file, 'utf8')) }))
     .filter((pkg) => !pkg.json.private);
   if (name) {
     const pkg = packages.find((p) => p.folder === name || p.json.name === name);
@@ -90,6 +93,12 @@ function assertOnUpToDateMain() {
   if (run('git', ['rev-parse', 'HEAD']) !== run('git', ['rev-parse', 'origin/main'])) {
     fail('main is not level with origin/main. Pull (or push) first.');
   }
+}
+
+/** Where the Release workflow publishes a package: its `publishConfig.registry`, else npmjs.com. */
+function registryName(json) {
+  const registry = json.publishConfig?.registry ?? 'https://registry.npmjs.org';
+  return new URL(registry).hostname === 'npm.pkg.github.com' ? 'GitHub Packages' : 'npmjs.com';
 }
 
 function tagExists(tag) {
@@ -177,7 +186,7 @@ if (command === 'prepare') {
     '',
     '**Steps**',
     '',
-    `1. The Release workflow runs for \`${tag}\` → **Expect:** it publishes ${pkg.json.name}@${version} to GitHub Packages and creates a GitHub Release with notes.`,
+    `1. The Release workflow runs for \`${tag}\` → **Expect:** it publishes ${pkg.json.name}@${version} to ${registryName(pkg.json)} and creates a GitHub Release with notes.`,
     '',
     '**Edge cases and failure paths**',
     '',
