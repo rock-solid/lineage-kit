@@ -1,4 +1,4 @@
-# 🧬 @rock-solid/payload-plugin-lineage
+# 🧬 @rock-solid/payload-lineage
 
 The content side of lineage, from a Payload config. Collections, globals and blocks are nodes, and
 the fields that link them are edges, read left to right from what an entity is built with to where
@@ -21,7 +21,7 @@ Works with Payload 3.
 Add the plugin to `payload.config.ts`:
 
 ```ts
-import { lineagePlugin } from '@rock-solid/payload-plugin-lineage';
+import { lineagePlugin } from '@rock-solid/payload-lineage';
 
 export default buildConfig({
   // ...
@@ -43,7 +43,7 @@ Payload's own collections (`payload-preferences`, `payload-migrations`, ...) are
 Or build the graph yourself, e.g. in a script:
 
 ```ts
-import { buildContentGraph } from '@rock-solid/payload-plugin-lineage';
+import { buildContentGraph } from '@rock-solid/payload-lineage';
 import config from '@payload-config';
 
 const graph = buildContentGraph(await config);
