@@ -10,6 +10,7 @@
     "setup": "pnpm install && pnpm --filter example exec playwright install chromium",
     "build": "pnpm --filter \"./packages/**\" build",
     "dev": "pnpm build && pnpm --parallel --filter \"./packages/**\" --filter example dev",
+    "dev:payload": "pnpm build && pnpm --parallel --filter \"./packages/**\" --filter example-payload dev",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
