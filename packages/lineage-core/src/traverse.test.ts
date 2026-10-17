@@ -21,6 +21,28 @@ describe('walk', () => {
     expect(walk('b', down, 0).size).toBe(0);
   });
 
+  it('walks each node once when paths converge, however many lead to it', () => {
+    // 18 layers of 2 nodes, each linking to both nodes in the next: 2^18 paths, 38 nodes
+    const converging = [
+      { source: 'root', target: '0a' },
+      { source: 'root', target: '0b' },
+    ];
+    for (let l = 0; l < 18; l++) {
+      for (const a of ['a', 'b']) {
+        for (const b of ['a', 'b']) converging.push({ source: `${l}${a}`, target: `${l + 1}${b}` });
+      }
+    }
+    const next = adjacency(converging).down;
+    let lookups = 0;
+    const counted = new Map(next);
+    counted.get = (id: string) => {
+      lookups++;
+      return next.get(id);
+    };
+    expect(walk('root', counted).size).toBe(38);
+    expect(lookups).toBeLessThanOrEqual(39);
+  });
+
   it('stops in a cycle', () => {
     expect([...walk('c', down)].sort()).toEqual(['d', 'g']);
   });

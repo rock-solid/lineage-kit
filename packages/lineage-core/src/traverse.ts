@@ -17,10 +17,16 @@ export function walk(start: string, next: Map<string, string[]>, maxDepth = Infi
   const seen = new Set<string>();
   let frontier = [start];
   for (let level = 0; level < maxDepth && frontier.length; level++) {
-    frontier = frontier
-      .flatMap((id) => next.get(id) ?? [])
-      .filter((id) => id !== start && !seen.has(id));
-    for (const id of frontier) seen.add(id);
+    const reached: string[] = [];
+    for (const id of frontier) {
+      for (const to of next.get(id) ?? []) {
+        // Seen as it joins the level, so a node two paths reach is walked once, not once per path
+        if (to === start || seen.has(to)) continue;
+        seen.add(to);
+        reached.push(to);
+      }
+    }
+    frontier = reached;
   }
   return seen;
 }
