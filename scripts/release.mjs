@@ -4,8 +4,8 @@
 //   pnpm release prepare <patch|minor|major|x.y.z>   bump the version on a release branch, open its PR
 //   pnpm release tag                                 after that PR merges: tag main, which publishes
 //
-// Options: --package <name> (needed once the repo has more than one), --dry-run (print, change
-// nothing). The tag is `<package folder>@<version>`, e.g. `storybook-addon-lineage@0.2.0`; the
+// Options: --package <folder or name> (which package; needed while the repo has more than one),
+// --dry-run (print, change nothing). The tag is `<package folder>@<version>`, e.g. `storybook-addon-lineage@0.2.0`; the
 // Release workflow publishes on it.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -31,7 +31,7 @@ const USAGE = `Usage:
   pnpm release tag                                 after that PR merges: tag main, which publishes
 
 Options:
-  --package <name>   the package to release, once the repo has more than one
+  --package <name>   the package to release, by folder or name, e.g. payload-lineage
   --dry-run          print what would happen, change nothing`;
 
 if (values.help || !['prepare', 'tag'].includes(command)) {

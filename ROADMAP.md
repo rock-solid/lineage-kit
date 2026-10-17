@@ -24,10 +24,8 @@ open an issue to suggest or question anything here.
 ### ⏭️ Next
 
 - **Public release on npmjs.com:** check that the `@rock-solid` npm org is free, make the repo public,
-  switch the Release workflow's registry.
-- **Release more than one package.** The Release workflow only handles `storybook-addon-lineage@*`
-  tags and publishes that package; widen its tag and publish filters so `payload-lineage@0.1.0` can
-  ship.
+  and drop `publishConfig.registry` from each package; the Release workflow publishes to npmjs.com
+  when a package has none.
 - **One graph package for both tools.** The ELK layout, the traversal and the React Flow parts are
   written twice, in the Storybook addon and the Payload plugin; move the shared parts into one
   package.
@@ -138,8 +136,8 @@ globals, 22 blocks).
 
 ### 🚀 Now
 
-- **First release, 0.1.0,** once the repo-wide install decision and the Release workflow for more
-  than one package are done (see [Whole repo](#-whole-repo)).
+- **First release, 0.1.0,** once the repo-wide install decision is made (see
+  [Whole repo](#-whole-repo)): the Release workflow already publishes it.
 
 ### ⏭️ Next
 
