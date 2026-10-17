@@ -11,11 +11,11 @@ description = "One-time setup for a fresh clone: dependencies, git hooks and the
 run = "pnpm run setup"
 
 [tasks.dev]
-description = "Build the addon in watch mode and start the example Storybook at http://localhost:6006"
+description = "Build the packages in watch mode and start the example Storybook at http://localhost:6006"
 run = "pnpm dev"
 
 [tasks.dev-payload]
-description = "Build the Payload plugin in watch mode and start the example Payload admin at http://localhost:3000/admin"
+description = "Build the packages in watch mode and start the example Payload admin at http://localhost:3000/admin"
 run = "pnpm dev:payload"
 
 [tasks.build]
@@ -23,7 +23,7 @@ description = "Build the packages to dist/"
 run = "pnpm build"
 
 [tasks.test]
-description = "Run the unit tests and the example's stories as browser tests, with play functions and a11y checks"
+description = "Run every package's unit tests, the Payload example's config test and the example Storybook's stories as browser tests"
 run = "pnpm test"
 
 [tasks.lint]
