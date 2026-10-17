@@ -7,10 +7,10 @@ open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                             |                                                                         |
-| ------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial                                  |
-| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published     | Lineage and Data model pages in the admin, tried on connect-hospitality |
+| Package                               | Version                             |                                                                      |
+| ------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | On trial in a client project                                         |
+| `@rock-solid/payload-lineage`         | 0.0.0, in `main`, not published     | Lineage and Data model pages in the admin, tried on a client project |
 
 ## 🌐 Whole repo
 
@@ -133,7 +133,7 @@ Not committed to; open an issue if one would help you.
 ## 🧬 Payload plugin
 
 `@rock-solid/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
-and Data model pages in the admin. Tried on connect-hospitality (Payload 3.90, 8 collections, 2
+and Data model pages in the admin. Tried on a client project (Payload 3.90, 8 collections, 2
 globals, 22 blocks).
 
 ### 🚀 Now
