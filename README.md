@@ -8,12 +8,15 @@ used, and what a change affects.
 | Package                                                                   | Status |                                                                                                                       |
 | ------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
 | [`@rock-solid/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1    | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
-| [`@rock-solid/payload-lineage`](packages/payload-lineage)                 | 0.0    | Collections, blocks and the pages that use them, from a Payload config                                                |
+| [`@rock-solid/payload-lineage`](packages/payload-lineage)                 | 0.0    | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
 
 ## 🚀 Quick start
 
-Install the Storybook addon and add it to `.storybook/main.ts`: see
-[its README](packages/storybook-addon-lineage#-install).
+- **Storybook:** install the addon and add it to `.storybook/main.ts`: see
+  [its README](packages/storybook-addon-lineage#-install).
+- **Payload:** add the plugin to `payload.config.ts`: see
+  [its README](packages/payload-lineage#-install), or run the
+  [example](examples/payload) with `pnpm dev:payload`.
 
 ## 🗺️ Roadmap
 
@@ -49,18 +52,18 @@ Either way, setup installs the dependencies, the git hooks and the Chromium the 
 
 Every mise task is an alias over a pnpm script, so both columns run the same thing.
 
-| Script             | mise                | What it does                                                                                        |
-| ------------------ | ------------------- | --------------------------------------------------------------------------------------------------- |
-| `pnpm run setup`   | `mise setup`        | One-time setup: dependencies, git hooks, test browser                                               |
-| `pnpm dev`         | `mise dev`          | Builds the addon in watch mode and starts the example Storybook at http://localhost:6006            |
-| `pnpm dev:payload` | `mise dev-payload`  | Builds the Payload plugin in watch mode and starts the example admin at http://localhost:3000/admin |
-| `pnpm build`       | `mise build`        | Builds the packages to `dist/`                                                                      |
-| `pnpm test`        | `mise test`         | Runs the example's stories as browser tests, with play functions and a11y checks                    |
-| `pnpm lint`        | `mise lint`         | ESLint                                                                                              |
-| `pnpm typecheck`   | `mise typecheck`    | TypeScript, every package                                                                           |
-| `pnpm format`      | `mise format`       | Prettier                                                                                            |
-| `pnpm check`       | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build             |
-| `pnpm release …`   | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                           |
+| Script             | mise                | What it does                                                                                                        |
+| ------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm run setup`   | `mise setup`        | One-time setup: dependencies, git hooks, test browser                                                               |
+| `pnpm dev`         | `mise dev`          | Builds the packages in watch mode and starts the example Storybook at http://localhost:6006                         |
+| `pnpm dev:payload` | `mise dev-payload`  | Builds the packages in watch mode and starts the example Payload admin at http://localhost:3000/admin               |
+| `pnpm build`       | `mise build`        | Builds the packages to `dist/`                                                                                      |
+| `pnpm test`        | `mise test`         | Every package's unit tests, the Payload example's config test, and the example Storybook's stories as browser tests |
+| `pnpm lint`        | `mise lint`         | ESLint                                                                                                              |
+| `pnpm typecheck`   | `mise typecheck`    | TypeScript, every package                                                                                           |
+| `pnpm format`      | `mise format`       | Prettier                                                                                                            |
+| `pnpm check`       | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build                             |
+| `pnpm release …`   | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                                           |
 
 ### 🗂️ Project layout
 
@@ -80,8 +83,9 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
 
 1. Branch from `main`, and keep each PR to one change.
 2. Run `pnpm check` before you push. CI runs the same.
-3. Add or update a test for any behaviour you change. Viewer tests are stories with play
-   functions in `examples/react/src/lineage.test.stories.tsx`.
+3. Add or update a test for any behaviour you change. Package tests are Vitest files next to the
+   code (`src/**/*.test.ts`); the Storybook viewer's are stories with play functions in
+   `examples/react/src/lineage.test.stories.tsx`.
 4. Fill in the PR template; the test plan matters most.
 
 Commit messages and PR titles follow [Conventional Commits](https://www.conventionalcommits.org),

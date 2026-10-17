@@ -9,6 +9,8 @@
     "dbt"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/rock-solid/lineage-kit/tree/main/packages/storybook-addon-lineage#readme",
+  "bugs": "https://github.com/rock-solid/lineage-kit/issues",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rock-solid/lineage-kit.git",
