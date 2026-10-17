@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // React.createElement rather than react/jsx-runtime, which tsup would bundle into the manager,
+    // where it doesn't match the React that Storybook's UI runs on
+    "jsx": "react"
+  },
+  "include": ["src"]
+}

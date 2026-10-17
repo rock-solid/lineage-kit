@@ -1,0 +1,7 @@
+node_modules/
+dist/
+storybook-static/
+__screenshots__/
+*.log
+*.tgz
+.DS_Store

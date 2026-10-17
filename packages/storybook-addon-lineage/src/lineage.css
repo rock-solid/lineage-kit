@@ -1,0 +1,279 @@
+/* Self-contained, and every class carries an `lk-` prefix so it can't clash with the host project's. */
+
+.lk-root {
+  --lineage-bg: #f8fafc;
+  --lineage-surface: #ffffff;
+  --lineage-border: #cbd5e1;
+  --lineage-text: #0f172a;
+  --lineage-muted: #475569;
+  --lineage-accent: #f97316;
+
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: var(--lineage-bg);
+  color: var(--lineage-text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.lk-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 260px;
+  /* Scrolls on short screens instead of running off the canvas */
+  max-height: calc(100vh - 30px);
+  overflow-y: auto;
+  padding: 14px;
+  background: var(--lineage-surface);
+  border: 1px solid var(--lineage-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 8%);
+}
+
+.lk-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lk-hint,
+.lk-stats {
+  margin: 0;
+  color: var(--lineage-muted);
+  line-height: 1.4;
+}
+
+.lk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.lk-input {
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+  background: var(--lineage-surface);
+  border: 1px solid var(--lineage-border);
+  border-radius: 6px;
+}
+
+.lk-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lk-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.lk-result:hover,
+.lk-result:focus-visible {
+  background: var(--lineage-bg);
+}
+
+.lk-result-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lk-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lk-legend {
+  margin-bottom: 4px;
+  padding: 0;
+  font-weight: 500;
+}
+
+.lk-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.lk-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--layer);
+}
+
+.lk-count {
+  margin-left: auto;
+  color: var(--lineage-muted);
+}
+
+.lk-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--lineage-border);
+}
+
+.lk-focus-name {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lk-selector {
+  padding: 4px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--lineage-bg);
+  border: 1px solid var(--lineage-border);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.lk-depths {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.lk-button {
+  padding: 6px 10px;
+  font: inherit;
+  color: inherit;
+  background: var(--lineage-bg);
+  border: 1px solid var(--lineage-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.lk-button:hover {
+  border-color: var(--lineage-muted);
+}
+
+/* Nodes */
+
+.lk-node {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 200px;
+  height: 48px;
+  padding: 0 10px;
+  /* Layer colours are all 4.5:1 or better against white (WCAG AA) */
+  color: #ffffff;
+  background: var(--layer);
+  border: 1px solid rgb(15 23 42 / 20%);
+  border-radius: 6px;
+  position: relative;
+  transition:
+    opacity 120ms,
+    box-shadow 120ms;
+}
+
+.lk-label {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lk-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.lk-no-story {
+  padding: 0 4px;
+  color: #9a3412;
+  background: #ffffff;
+  border-radius: 3px;
+}
+
+.lk-story-via {
+  padding: 0 4px;
+  overflow: hidden;
+  color: var(--lineage-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: rgb(255 255 255 / 85%);
+  border-radius: 3px;
+}
+
+.lk-handle {
+  visibility: hidden;
+}
+
+/* Rings sit outside a gap of background colour, so they read against every fill */
+.lk-related {
+  box-shadow:
+    0 0 0 2px var(--lineage-bg),
+    0 0 0 3px var(--lineage-text);
+}
+
+.lk-active {
+  box-shadow:
+    0 0 0 2px var(--lineage-bg),
+    0 0 0 5px var(--lineage-accent);
+}
+
+.lk-match {
+  box-shadow:
+    0 0 0 2px var(--lineage-bg),
+    0 0 0 4px var(--lineage-text);
+}
+
+/* Changed since the base branch: a dashed outline (separate from the state rings) and a badge */
+.lk-changed {
+  outline: 2px dashed var(--lineage-text);
+  outline-offset: 3px;
+}
+
+.lk-changed-badge {
+  position: absolute;
+  top: -9px;
+  right: 8px;
+  padding: 0 5px;
+  color: var(--lineage-surface);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  background: var(--lineage-text);
+  border-radius: 8px;
+}
+
+.lk-dimmed {
+  opacity: 0.2;
+}
+
+/* Edges */
+
+.lk-edge-active path {
+  stroke: var(--lineage-accent) !important;
+  stroke-width: 2px !important;
+}
+
+.lk-edge-dimmed {
+  opacity: 0.12;
+}

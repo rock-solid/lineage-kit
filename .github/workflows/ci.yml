@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm format:check
+      # The example and its type checks use the built package
+      - name: Build
+        run: pnpm build
+      - name: Lint
+        run: pnpm lint --max-warnings 0
+      - name: Typecheck
+        run: pnpm typecheck
+      - run: pnpm --filter example exec playwright install --with-deps chromium
+      - name: Story tests (render, play functions, a11y)
+        run: pnpm test
+      - name: Example Storybook build
+        run: pnpm --filter example build-storybook --quiet
