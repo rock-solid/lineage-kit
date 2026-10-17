@@ -143,4 +143,71 @@ describe('buildContentGraph', () => {
     const { nodes } = buildContentGraph(config, { exclude: ['block:media'] });
     expect(nodes.map((n) => n.id)).toContain('collection:media');
   });
+
+  it('follows every definition of a block slug, not just the first', () => {
+    // Two inline `hero` blocks with different fields, in different collections
+    const hero = (field: string, relationTo: string) => ({
+      slug: 'hero',
+      fields: [{ name: field, type: 'upload', relationTo }],
+    });
+    const { nodes, edges } = buildContentGraph({
+      collections: [
+        {
+          slug: 'pages',
+          fields: [{ name: 'layout', type: 'blocks', blocks: [hero('image', 'images')] }],
+        },
+        {
+          slug: 'posts',
+          fields: [{ name: 'layout', type: 'blocks', blocks: [hero('video', 'videos')] }],
+        },
+        { slug: 'images', fields: [] },
+        { slug: 'videos', fields: [] },
+      ],
+    });
+    expect(nodes.filter((n) => n.id === 'block:hero')).toHaveLength(1);
+    expect(edges.filter((e) => e.target === 'block:hero').map((e) => e.source)).toEqual([
+      'collection:images',
+      'collection:videos',
+    ]);
+  });
+
+  it('stops at a block that contains itself', () => {
+    const { edges } = buildContentGraph({
+      blocks: [
+        {
+          slug: 'section',
+          fields: [{ name: 'children', type: 'blocks', blockReferences: ['section'] }],
+        },
+      ],
+      collections: [
+        {
+          slug: 'pages',
+          fields: [{ name: 'layout', type: 'blocks', blockReferences: ['section'] }],
+        },
+      ],
+    });
+    expect(edges.map((e) => `${e.source}>${e.target}`)).toEqual([
+      'block:section>block:section',
+      'block:section>collection:pages',
+    ]);
+  });
+
+  it('leaves out only Payload’s own collections, not globals or blocks that start with payload-', () => {
+    const { nodes } = buildContentGraph({
+      blocks: [{ slug: 'payload-hero', fields: [] }],
+      collections: [
+        { slug: 'payload-preferences', fields: [] },
+        {
+          slug: 'pages',
+          fields: [{ name: 'layout', type: 'blocks', blockReferences: ['payload-hero'] }],
+        },
+      ],
+      globals: [{ slug: 'payload-settings', fields: [] }],
+    });
+    expect(nodes.map((n) => n.id)).toEqual([
+      'collection:pages',
+      'global:payload-settings',
+      'block:payload-hero',
+    ]);
+  });
 });
