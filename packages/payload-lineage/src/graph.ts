@@ -27,8 +27,8 @@ export type PayloadConfigLike = {
   blocks?: BlockLike[];
 };
 
-// Payload adds these to every sanitized config
-const INTERNAL_SLUG = /^payload-/;
+// Payload adds these collections to every sanitized config; it adds no globals or blocks
+const INTERNAL_COLLECTION = /^payload-/;
 
 /** Builds the graph of a Payload config's collections, globals and blocks, and the fields that link them. */
 export function buildContentGraph(
@@ -36,7 +36,9 @@ export function buildContentGraph(
   { exclude = [] }: ContentGraphOptions = {},
 ): ContentGraph {
   const excluded = (kind: ContentKind, slug: string) =>
-    INTERNAL_SLUG.test(slug) || exclude.includes(slug) || exclude.includes(`${kind}:${slug}`);
+    (kind === 'collection' && INTERNAL_COLLECTION.test(slug)) ||
+    exclude.includes(slug) ||
+    exclude.includes(`${kind}:${slug}`);
   const collections = (config.collections ?? []).filter((c) => !excluded('collection', c.slug));
   const globals = (config.globals ?? []).filter((g) => !excluded('global', g.slug));
   const sharedBlocks = new Map((config.blocks ?? []).map((b) => [b.slug, b]));
@@ -59,12 +61,14 @@ export function buildContentGraph(
     edges.set(key, edge);
   };
 
-  // Each block is walked once, however many fields use it
-  const walkedBlocks = new Set<string>();
+  // Each block definition is walked once, however many fields use it, which also ends a block that
+  // contains itself. By definition, not slug: two collections can each have an inline `hero` block
+  // with different fields, and both sets of links belong to the one `block:hero` node.
+  const walkedBlocks = new Set<BlockLike>();
   const walkBlock = (block: BlockLike) => {
     const id = addNode('block', block.slug, labelOf(block, block.labels?.singular));
-    if (walkedBlocks.has(id)) return id;
-    walkedBlocks.add(id);
+    if (walkedBlocks.has(block)) return id;
+    walkedBlocks.add(block);
     walkFields(block.fields, id, []);
     return id;
   };
