@@ -1,7 +1,13 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "rock-solid/lineage-kit" }],
+  "changelog": [
+    "@changesets/changelog-github",
+    {
+      "repo": "rock-solid/lineage-kit"
+    }
+  ],
   "commit": false,
+  "fixed": [["@rocksoliddigital/storybook-addon-lineage", "@rocksoliddigital/payload-lineage"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

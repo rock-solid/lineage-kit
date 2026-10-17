@@ -133,8 +133,8 @@ globals, 22 blocks); `examples/payload` is a small one to develop against.
 
 ### 🚀 Now
 
-- **First release, 0.1.0,** with the move to npmjs.com (see [Whole repo](#-whole-repo)); its
-  changeset is waiting in `.changeset/`.
+- **First release, 0.2.0,** with the move to npmjs.com (see [Whole repo](#-whole-repo)). Both
+  packages share that version from then on; its changeset is waiting in `.changeset/`.
 
 ### ⏭️ Next
 

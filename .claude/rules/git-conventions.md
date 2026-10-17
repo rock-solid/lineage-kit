@@ -55,5 +55,6 @@ A PR that changes what a published package does (`packages/storybook-addon-linea
 `packages/payload-lineage`, or `packages/lineage-core`, which is built into both) adds a changeset
 with `pnpm changeset`, or by writing `.changeset/<name>.md` directly: the packages, the bump
 (`patch` for fixes, `minor` for features while below 1.0) and one changelog line for users. Docs,
-tests, CI and examples need none. Never edit versions or `CHANGELOG.md` by hand; the Version
-Packages PR does that.
+tests, CI and examples need none. The two published packages are a fixed group: they share one
+version and release together, so a changeset for either bumps both. Never edit versions or
+`CHANGELOG.md` by hand; the Version Packages PR does that.
