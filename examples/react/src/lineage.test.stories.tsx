@@ -2,7 +2,7 @@ import type { LineageGraphData } from '@rock-solid/storybook-addon-lineage';
 import { LineageGraph } from '@rock-solid/storybook-addon-lineage';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { expect, waitFor } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 // Tests of the viewer on fixture graphs, so they don't change when the example does. `!dev` keeps
 // them out of the sidebar; `pnpm test` still runs them.
@@ -112,6 +112,40 @@ export const PropsChangeAfterMount: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Change props' }));
     await expect(await canvas.findByText('1+Header+')).toBeInTheDocument();
     await expect(await canvas.findByText('src/header.tsx')).toBeInTheDocument();
+  },
+};
+
+/** Every focus can go in a URL: a story id, or for a file without a story its URL-safe path. */
+export const FocusKeys: Story = {
+  args: { graph, onFocusChange: fn() },
+  play: async ({ args, canvasElement, userEvent }) => {
+    await userEvent.click(await waitForNode(canvasElement, 'src/carousel.tsx'));
+    await waitFor(() => expect(args.onFocusChange).toHaveBeenLastCalledWith('src-carousel-tsx'));
+    await userEvent.click(await waitForNode(canvasElement, 'src/header.tsx'));
+    await waitFor(() => expect(args.onFocusChange).toHaveBeenLastCalledWith('header--docs'));
+  },
+};
+
+/** A URL-safe path from a link resolves to its file. */
+export const FocusFromUrlSafePath: Story = {
+  args: { graph, focus: 'src-carousel-tsx' },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText('src/carousel.tsx')).toBeInTheDocument();
+  },
+};
+
+/** Depths changed in the graph's panel are reported, for the story to keep in the URL. */
+export const DepthChangeReported: Story = {
+  args: { graph, focus: 'src/header.tsx', onDepthChange: fn() },
+  play: async ({ args, canvas, userEvent }) => {
+    await canvas.findByText('+Header+');
+    await userEvent.selectOptions(canvas.getByLabelText('Upstream'), 'None');
+    await expect(args.onDepthChange).toHaveBeenLastCalledWith({
+      upstream: 0,
+      downstream: Infinity,
+    });
+    await userEvent.selectOptions(canvas.getByLabelText('Downstream'), '+2');
+    await expect(args.onDepthChange).toHaveBeenLastCalledWith({ upstream: 0, downstream: 2 });
   },
 };
 

@@ -51,8 +51,13 @@ export type LineageGraphProps = {
   upstream?: number;
   /** Levels of descendants (where the file is used) a focused node shows. Defaults to all. */
   downstream?: number;
-  /** Called with the focused node's story id (or path, when it has no story), or `null` when cleared. */
+  /**
+   * Called with the focused node's key, or `null` when cleared: its story id, or for a file without a
+   * story its URL-safe path (see `focusKey`), so the focus can always go in a URL.
+   */
   onFocusChange?: (focus: string | null) => void;
+  /** Called when Upstream or Downstream changes in the graph's panel. */
+  onDepthChange?: (depth: { upstream: number; downstream: number }) => void;
 };
 
 /**
@@ -71,6 +76,7 @@ const LineageView: React.FC<LineageGraphProps> = ({
   upstream: upstreamProp = Infinity,
   downstream: downstreamProp = Infinity,
   onFocusChange,
+  onDepthChange,
 }) => {
   const { fitView } = useReactFlow();
   const [hiddenLayers, setHiddenLayers] = useState(
@@ -106,7 +112,8 @@ const LineageView: React.FC<LineageGraphProps> = ({
   const focusOn = useCallback(
     (id: string | null) => {
       setFocus(id);
-      onFocusChange?.(id ? (nodesById.get(id)?.storyId ?? id) : null);
+      const node = id ? nodesById.get(id) : undefined;
+      onFocusChange?.(node ? focusKey(node) : null);
     },
     [nodesById, onFocusChange],
   );
@@ -456,8 +463,22 @@ const LineageView: React.FC<LineageGraphProps> = ({
                   {selector(focused.label, upstream, downstream)}
                 </code>
                 <div className={styles.depths}>
-                  <DepthSelect label="Upstream" value={upstream} onChange={setUpstream} />
-                  <DepthSelect label="Downstream" value={downstream} onChange={setDownstream} />
+                  <DepthSelect
+                    label="Upstream"
+                    value={upstream}
+                    onChange={(value) => {
+                      setUpstream(value);
+                      onDepthChange?.({ upstream: value, downstream });
+                    }}
+                  />
+                  <DepthSelect
+                    label="Downstream"
+                    value={downstream}
+                    onChange={(value) => {
+                      setDownstream(value);
+                      onDepthChange?.({ upstream, downstream: value });
+                    }}
+                  />
                 </div>
                 {storyOf(focused) && (
                   <button
@@ -544,11 +565,23 @@ function selector(name: string, upstream: number, downstream: number) {
 }
 
 /** A node id from a path, or from a story id: the exact docs id first, then any story of the same component. */
+/** A file's path as a URL-safe key (`src-blocks-RenderBlocks-tsx`): Storybook drops `/` and `.` from URL args. */
+const urlSafe = (path: string) => path.replace(/[^a-zA-Z0-9]+/g, '-');
+
+/** The key `onFocusChange` reports for a node: its story id, else its URL-safe path. */
+export function focusKey(node: LineageNode) {
+  return node.storyId ?? urlSafe(node.id);
+}
+
+/**
+ * A node id from a focus: a path, a URL-safe path, or a story id (the exact docs id first, then any
+ * story of the same component).
+ */
 function resolveFocus(graph: Graph, focus: string | undefined) {
   if (!focus) return null;
   const component = focus.split('--')[0];
   const node =
-    graph.nodes.find((n) => n.id === focus || n.storyId === focus) ??
+    graph.nodes.find((n) => n.id === focus || n.storyId === focus || urlSafe(n.id) === focus) ??
     graph.nodes.find((n) => n.storyId?.split('--')[0] === component);
   return node?.id ?? null;
 }

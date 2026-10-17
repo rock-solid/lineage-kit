@@ -7,9 +7,12 @@ import { expect, waitFor } from 'storybook/test';
 
 import { LineageGraph } from '../index.js';
 
-const DEPTH_OPTIONS = ['0', '1', '2', '3', 'all'];
-const DEPTH_MAPPING = { 0: 0, 1: 1, 2: 2, 3: 3, all: Infinity };
+// Depth args are numbers, or `all` for every level. Numbers rather than '0'–'3': Storybook reads
+// `upstream:1` in a URL as the number 1, and drops values that aren't among the options.
+const DEPTH_OPTIONS = [0, 1, 2, 3, 'all'];
+const DEPTH_MAPPING = { all: Infinity };
 const DEPTH_LABELS = { 0: 'None', 1: '+1', 2: '+2', 3: '+3', all: 'All' };
+const depthArg = (depth) => (depth === Infinity ? 'all' : depth);
 
 const meta = {
   title: 'Lineage',
@@ -21,13 +24,12 @@ const meta = {
     // Focusing a node changes the args; that is navigation, not an edit worth saving
     controls: { disableSaveFromUI: true },
   },
-  // Declared here rather than left to docgen, which can't read prop types from compiled JS. The
-  // depths map URL-safe keys to numbers: Storybook keeps only plain strings in the URL.
+  // Declared here rather than left to docgen, which can't read prop types from compiled JS
   argTypes: {
     focus: {
       control: 'text',
       description:
-        "The file to focus on: its path (`src/components/ui/button.tsx`) or one of its stories' ids (`ui-button--docs`)",
+        "The file to focus on: one of its stories' ids (`ui-button--docs`), its path (`src/components/ui/button.tsx`), or its path with `-` for `/` and `.` (`src-components-ui-button-tsx`), which is what the URL keeps",
     },
     upstream: {
       control: { type: 'select', labels: DEPTH_LABELS },
@@ -43,13 +45,19 @@ const meta = {
     },
     graph: { table: { disable: true } },
     onFocusChange: { table: { disable: true } },
+    onDepthChange: { table: { disable: true } },
   },
-  // The focused node goes back into the `focus` arg, so the URL links to it (when it has a story)
+  args: { upstream: 'all', downstream: 'all' },
+  // The focus and depths chosen in the graph go back into the args, so the URL keeps them and a
+  // reload or a shared link opens the same view
   render: function Render(args) {
-    const [, updateArgs] = useArgs();
+    const [, updateArgs, resetArgs] = useArgs();
     return createElement(LineageGraph, {
       ...args,
-      onFocusChange: (focus) => updateArgs({ focus: focus ?? undefined }),
+      // Clearing resets the arg: `updateArgs({ focus: undefined })` would leave it in the URL
+      onFocusChange: (focus) => (focus ? updateArgs({ focus }) : resetArgs(['focus'])),
+      onDepthChange: ({ upstream, downstream }) =>
+        updateArgs({ upstream: depthArg(upstream), downstream: depthArg(downstream) }),
     });
   },
 };
