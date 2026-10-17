@@ -15,7 +15,8 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import ELK from 'elkjs/lib/elk.bundled.js';
+import { adjacency, walk, type LayoutOptions } from '@rock-solid/lineage-core';
+import { useLayout } from '@rock-solid/lineage-core/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';
@@ -31,8 +32,7 @@ const DEPTHS = [0, 1, 2, 3, Infinity];
 // A click waits this long for a second one, so a double-click doesn't refocus (and move) the graph first
 const DOUBLE_CLICK_MS = 250;
 const MAX_RESULTS = 8;
-
-const elk = new ELK();
+const LAYOUT: LayoutOptions = { layerSpacing: 90, nodeSpacing: 14, placement: 'BRANDES_KOEPF' };
 
 type NodeState = 'default' | 'active' | 'related' | 'dimmed' | 'match';
 type NodeData = { node: LineageNode; layer: LineageLayer; state: NodeState };
@@ -90,7 +90,6 @@ const LineageView: React.FC<LineageGraphProps> = ({
   const [hideUnlinked, setHideUnlinked] = useState(true);
   const [changedOnly, setChangedOnly] = useState(false);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const [positions, setPositions] = useState<Map<string, { x: number; y: number }> | null>(null);
 
   const layers = useMemo(() => new Map(graph.layers.map((l) => [l.id, l])), [graph]);
   const nodesById = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
@@ -168,43 +167,23 @@ const LineageView: React.FC<LineageGraphProps> = ({
 
   const { up, down } = useMemo(() => adjacency(visible.edges), [visible.edges]);
 
-  // Lay out only when the set of nodes changes, not on hover
-  const layoutKey = [...visible.ids].sort().join('|');
-  useEffect(() => {
-    let cancelled = false;
-    elk
-      .layout({
-        id: 'root',
-        layoutOptions: {
-          'elk.algorithm': 'layered',
-          'elk.direction': 'RIGHT',
-          'elk.layered.spacing.nodeNodeBetweenLayers': '90',
-          'elk.spacing.nodeNode': '14',
-          'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-        },
-        children: [...visible.ids].map((id) => ({ id, width: NODE_WIDTH, height: NODE_HEIGHT })),
-        edges: visible.edges.map((e, i) => ({
-          id: `e${i}`,
-          sources: [e.source],
-          targets: [e.target],
-        })),
-      })
-      .then((layout) => {
-        if (cancelled) return;
-        setPositions(new Map(layout.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }])));
-        // Leave room on the left for the panel
-        requestAnimationFrame(() =>
-          fitView({
-            padding: { top: '24px', right: '24px', bottom: '24px', left: '300px' },
-            duration: 300,
-          }),
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- layoutKey stands in for visible
-  }, [layoutKey, fitView]);
+  // Lays out again only when the nodes or edges change, not on hover
+  const positions = useLayout(
+    useMemo(
+      () => [...visible.ids].map((id) => ({ id, width: NODE_WIDTH, height: NODE_HEIGHT })),
+      [visible.ids],
+    ),
+    visible.edges,
+    LAYOUT,
+    // Leave room on the left for the panel
+    () =>
+      requestAnimationFrame(() =>
+        fitView({
+          padding: { top: '24px', right: '24px', bottom: '24px', left: '300px' },
+          duration: 300,
+        }),
+      ),
+  );
 
   // Search covers every file, hidden layers included; names that start with the query come first
   const needle = query.trim().toLowerCase();
@@ -624,27 +603,4 @@ function openStory(node: LineageNode | undefined) {
   // A plain URL rather than SELECT_STORY, which would carry the graph's `focus` arg into the docs URL
   const storyId = storyOf(node);
   if (storyId) addons.getChannel().emit(NAVIGATE_URL, `?path=/docs/${storyId}`);
-}
-
-function adjacency(edges: Graph['edges']) {
-  const up = new Map<string, string[]>();
-  const down = new Map<string, string[]>();
-  for (const { source, target } of edges) {
-    up.set(target, [...(up.get(target) ?? []), source]);
-    down.set(source, [...(down.get(source) ?? []), target]);
-  }
-  return { up, down };
-}
-
-/** Every node reachable from `start` within `maxDepth` steps, not counting `start`. */
-function walk(start: string, next: Map<string, string[]>, maxDepth: number) {
-  const seen = new Set<string>();
-  let frontier = [start];
-  for (let level = 0; level < maxDepth && frontier.length; level++) {
-    frontier = frontier
-      .flatMap((id) => next.get(id) ?? [])
-      .filter((id) => id !== start && !seen.has(id));
-    for (const id of frontier) seen.add(id);
-  }
-  return seen;
 }

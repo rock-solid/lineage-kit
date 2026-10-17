@@ -125,7 +125,15 @@ function changesSinceLastTag(folder) {
     // No release tag yet
   }
   const range = lastTag ? [`${lastTag}..HEAD`] : [];
-  const log = run('git', ['log', '--format=- %s', ...range, '--', `packages/${folder}`]);
+  // The shared core is built into every package, so its changes ship with each of them
+  const log = run('git', [
+    'log',
+    '--format=- %s',
+    ...range,
+    '--',
+    `packages/${folder}`,
+    'packages/lineage-core',
+  ]);
   return { lastTag, log: log || '- (no commits touch the package)' };
 }
 

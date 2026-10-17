@@ -72,6 +72,13 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
   - `src/vite-plugin.ts` serves it to the viewer and rebuilds it on changes.
   - `src/preset.ts` wires both into Storybook and adds the Lineage page.
   - `src/manager.tsx` is the toolbar button, `src/LineageGraph.tsx` the viewer.
+- `packages/payload-lineage`: the Payload plugin.
+  - `src/graph.ts` builds the lineage graph and `src/schema.ts` the data model, from the config.
+  - `src/plugin.ts` registers the admin pages; `src/rsc.tsx` renders them on the server, and
+    `src/view/` holds the canvases, which run in the browser.
+- `packages/lineage-core`: what both share, walking a graph's links and laying it out with ELK
+  (with a React hook). It's private: each package's build includes its code, so it's never
+  published or installed on its own. Use it for anything both tools need, rather than copying.
 - `examples/payload`: a minimal Payload app (SQLite, no database server) that installs the plugin
   from the workspace. On first start, create a user at http://localhost:3000/admin, then open
   Lineage in the nav. Its `src/lineage.test.ts` checks the plugin against this real config.

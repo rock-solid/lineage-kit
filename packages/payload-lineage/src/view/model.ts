@@ -1,5 +1,7 @@
 // What the admin view shows of a graph, kept free of React so it can be tested on its own.
 
+import type { LayoutEdge, LayoutOptions } from '@rock-solid/lineage-core';
+
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
 
 export const NODE_WIDTH = 200;
@@ -45,53 +47,23 @@ export function visibleGraph(graph: ContentGraph, { hiddenKinds, hideUnconnected
   return { nodes, edges };
 }
 
-/** Every node upstream and downstream of `id`, and `id` itself, like dbt's `+model+`. */
-export function trace(id: string, edges: readonly ContentEdge[]): Set<string> {
-  const lineage = new Set([id]);
-  for (const [from, to] of [
-    ['target', 'source'],
-    ['source', 'target'],
-  ] as const) {
-    const queue = [id];
-    const seen = new Set([id]);
-    while (queue.length) {
-      const current = queue.shift()!;
-      for (const edge of edges) {
-        if (edge[from] !== current || seen.has(edge[to])) continue;
-        seen.add(edge[to]);
-        lineage.add(edge[to]);
-        queue.push(edge[to]);
-      }
-    }
-  }
-  return lineage;
-}
+export const LINEAGE_LAYOUT: LayoutOptions = {
+  layerSpacing: 80,
+  nodeSpacing: 16,
+  placement: 'NETWORK_SIMPLEX',
+};
 
 /**
- * The ELK graph for a left-to-right layout. Self-links are left out (the node shows a badge
- * instead), and block and upload links outrank relationships, so a page that links back to a block
- * it uses draws that link backwards rather than moving the block to the right of the page.
+ * The links for the layout. Block and upload links outrank relationships, so a page that links back
+ * to a block it uses draws that link backwards rather than moving the block to the right of the
+ * page. Self-links are left out by the layout; the node shows a badge instead.
  */
-export function layoutInput(nodes: readonly ContentNode[], edges: readonly ContentEdge[]) {
-  return {
-    id: 'root',
-    layoutOptions: {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'RIGHT',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-      'elk.spacing.nodeNode': '16',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-    },
-    children: nodes.map((n) => ({ id: n.id, width: NODE_WIDTH, height: NODE_HEIGHT })),
-    edges: edges
-      .filter((e) => e.source !== e.target)
-      .map((e, i) => ({
-        id: `e${i}`,
-        sources: [e.source],
-        targets: [e.target],
-        layoutOptions: { 'elk.layered.priority.direction': e.kind === 'relationship' ? '0' : '10' },
-      })),
-  };
+export function layoutEdges(edges: readonly ContentEdge[]): LayoutEdge[] {
+  return edges.map(({ source, target, kind }) => ({
+    source,
+    target,
+    priority: kind === 'relationship' ? 0 : 10,
+  }));
 }
 
 /** Where a node is edited in the admin; blocks are edited inside the documents that use them. */

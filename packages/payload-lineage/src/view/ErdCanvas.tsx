@@ -15,14 +15,14 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import ELK from 'elkjs/lib/elk.bundled.js';
+import { useLayout } from '@rock-solid/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Schema, SchemaEntity, SchemaField } from '../schema';
 import {
   describeCardinality,
   erdEdges,
-  erdLayoutInput,
+  ERD_LAYOUT,
   selfReferences,
   TABLE_WIDTH,
   tableHeight,
@@ -30,8 +30,6 @@ import {
   type ErdEdge,
 } from './erdModel';
 import { fitPadding } from './model';
-
-const elk = new ELK();
 
 type TableState = 'default' | 'active' | 'related' | 'dimmed' | 'selected';
 type TableData = {
@@ -72,7 +70,6 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [positions, setPositions] = useState<Map<string, { x: number; y: number }> | null>(null);
 
   const entities = useMemo(
     () => schema.entities.filter((e) => showGlobals || e.kind !== 'global'),
@@ -103,29 +100,19 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
     [entities, relations, keysOnly, expanded],
   );
 
-  // Lay out again only when tables come, go or change height
-  const layoutKey = tables.map((t) => `${t.entity.id}:${t.height}`).join('|');
-  useEffect(() => {
-    let cancelled = false;
-    elk
-      .layout(
-        erdLayoutInput(
-          tables.map((t) => ({ id: t.entity.id, height: t.height })),
-          lines,
-        ),
-      )
-      .then((layout) => {
-        if (cancelled) return;
-        setPositions(new Map(layout.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }])));
-        requestAnimationFrame(() =>
-          fitView({ padding: fitPadding(layoutRef.current?.clientWidth ?? 0) }),
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- layoutKey stands in for tables
-  }, [layoutKey, fitView]);
+  // Lays out again only when tables come, go or change height, or the lines change
+  const positions = useLayout(
+    useMemo(
+      () => tables.map((t) => ({ id: t.entity.id, width: TABLE_WIDTH, height: t.height })),
+      [tables],
+    ),
+    useMemo(() => lines.map((l) => ({ source: l.from, target: l.to })), [lines]),
+    ERD_LAYOUT,
+    () =>
+      requestAnimationFrame(() =>
+        fitView({ padding: fitPadding(layoutRef.current?.clientWidth ?? 0) }),
+      ),
+  );
 
   // Hover shows a table's own references, both ways
   const neighbours = useMemo(() => {
