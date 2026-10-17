@@ -31,6 +31,17 @@ open an issue to suggest or question anything here.
 - **One graph package for both tools.** The ELK layout, the traversal and the React Flow parts are
   written twice, in the Storybook addon and the Payload plugin; move the shared parts into one
   package.
+- **Export a view as an image or a Mermaid diagram,** for docs, PRs and tickets. One Export button
+  on each page, exporting what's on screen, with its filters and focus:
+  - **PNG or SVG** of the canvas, in the current theme.
+  - **Mermaid**, which GitHub, GitLab and most docs tools render from text, so it can be pasted into a
+    PR description and reviewed like code. The Storybook graph and the Payload lineage become a
+    `flowchart LR`; the Payload data model an `erDiagram`, whose crow's-foot notation carries
+    `many-to-one` and the rest (`}o--||`).
+  - The same as functions (`toMermaid(graph)`, `toMermaid(schema)`), so a script or a CI job can keep
+    a diagram in the docs up to date.
+  - Large graphs make unreadable Mermaid, so the export should warn past a size, e.g. 50 nodes, and
+    suggest focusing first.
 
 ### 🐞 Known issues
 
@@ -111,7 +122,6 @@ What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 
 Not committed to; open an issue if one would help you.
 
-- Export the graph or a focused view as PNG, SVG or Mermaid, for docs and PRs.
 - Group nodes into a column per layer, as dbt does with sources, staging and marts.
 - Collapse a folder into one node.
 - Node details: lines of code, last change, owners from `CODEOWNERS`.
@@ -195,7 +205,6 @@ globals, 22 blocks).
 
 Not committed to; open an issue if one would help you.
 
-- Export the ERD as Mermaid (`erDiagram`) or SVG, for docs and PRs.
 - Show a collection's hooks, access functions and versions/drafts settings on its table.
 - Link a block's node to the component that renders it, in the editor.
 - A "where is this used" panel on each collection's own admin page.
