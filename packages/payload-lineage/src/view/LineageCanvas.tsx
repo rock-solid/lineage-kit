@@ -16,10 +16,18 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk.bundled.js';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
-import { layoutInput, linksToItself, NODE_HEIGHT, NODE_WIDTH, trace, visibleGraph } from './model';
+import {
+  fitPadding,
+  layoutInput,
+  linksToItself,
+  NODE_HEIGHT,
+  NODE_WIDTH,
+  trace,
+  visibleGraph,
+} from './model';
 
 const elk = new ELK();
 const KINDS: { kind: ContentKind; label: string }[] = [
@@ -29,7 +37,14 @@ const KINDS: { kind: ContentKind; label: string }[] = [
 ];
 
 type NodeState = 'default' | 'active' | 'related' | 'dimmed' | 'selected';
-type NodeData = { node: ContentNode; state: NodeState; selfLink: boolean };
+type NodeData = {
+  node: ContentNode;
+  state: NodeState;
+  selfLink: boolean;
+  onSelect: (id: string) => void;
+  /** Traces the lineage while the node has keyboard focus, as hover does. */
+  onTrace: (id: string | null) => void;
+};
 type ContentFlowNode = Node<NodeData, 'content'>;
 
 export type LineageCanvasProps = {
@@ -50,6 +65,7 @@ export const LineageCanvas: React.FC<LineageCanvasProps> = (props) => (
 
 const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
   const { fitView } = useReactFlow();
+  const layoutRef = useRef<HTMLDivElement>(null);
   const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<ContentKind>>(new Set());
   const [hideUnconnected, setHideUnconnected] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -71,7 +87,7 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
       setPositions(new Map(layout.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }])));
       // Leave room on the right for the details panel
       requestAnimationFrame(() =>
-        fitView({ padding: { top: '96px', right: '360px', bottom: '24px', left: '24px' } }),
+        fitView({ padding: fitPadding(layoutRef.current?.clientWidth ?? 0) }),
       );
     });
     return () => {
@@ -101,7 +117,13 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
           position,
           width: NODE_WIDTH,
           height: NODE_HEIGHT,
-          data: { node, state, selfLink: linksToItself(node.id, visible.edges) },
+          data: {
+            node,
+            state,
+            selfLink: linksToItself(node.id, visible.edges),
+            onSelect: setSelected,
+            onTrace: setHovered,
+          },
         },
       ];
     });
@@ -148,68 +170,72 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
 
   return (
     // `data-ready` once the first layout is done, for tests to wait on
-    <div className="rs-lineage" data-ready={positions ? '' : undefined}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        minZoom={0.1}
-        onNodeMouseEnter={(_, node) => setHovered(node.id)}
-        onNodeMouseLeave={() => setHovered(null)}
-        onNodeClick={(_, node) => setSelected(node.id)}
-        onPaneClick={() => setSelected(null)}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background gap={24} />
-        <Controls showInteractive={false} />
-        <MiniMap
-          pannable
-          zoomable
-          className="rs-lineage__minimap"
-          nodeClassName={(node) =>
-            `rs-lineage__minimap-node--${(node as ContentFlowNode).data.node.kind}`
-          }
-          ariaLabel="Content lineage overview"
-        />
-        <Panel position="top-left">
-          <div className="rs-lineage__toolbar">
-            {KINDS.map(({ kind, label }) => (
-              <label key={kind} className="rs-lineage__toggle">
+    <div className="rs-lineage-layout" ref={layoutRef}>
+      <div className="rs-lineage" data-ready={positions ? '' : undefined}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          nodesDraggable={false}
+          // The node's own button takes keyboard focus, so React Flow's wrappers don't add tab stops
+          nodesFocusable={false}
+          edgesFocusable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          minZoom={0.1}
+          onNodeMouseEnter={(_, node) => setHovered(node.id)}
+          onNodeMouseLeave={() => setHovered(null)}
+          onNodeClick={(_, node) => setSelected(node.id)}
+          onPaneClick={() => setSelected(null)}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={24} />
+          <Controls showInteractive={false} />
+          <MiniMap
+            pannable
+            zoomable
+            className="rs-lineage__minimap"
+            nodeClassName={(node) =>
+              `rs-lineage__minimap-node--${(node as ContentFlowNode).data.node.kind}`
+            }
+            ariaLabel="Content lineage overview"
+          />
+          <Panel position="top-left">
+            <div className="rs-lineage__toolbar">
+              {KINDS.map(({ kind, label }) => (
+                <label key={kind} className="rs-lineage__toggle">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenKinds.has(kind)}
+                    onChange={() => toggleKind(kind)}
+                  />
+                  <span className={`rs-lineage__swatch rs-lineage__swatch--${kind}`} />
+                  {label}
+                </label>
+              ))}
+              <label className="rs-lineage__toggle">
                 <input
                   type="checkbox"
-                  checked={!hiddenKinds.has(kind)}
-                  onChange={() => toggleKind(kind)}
+                  checked={hideUnconnected}
+                  onChange={() => setHideUnconnected((current) => !current)}
                 />
-                <span className={`rs-lineage__swatch rs-lineage__swatch--${kind}`} />
-                {label}
+                Hide unconnected
               </label>
-            ))}
-            <label className="rs-lineage__toggle">
-              <input
-                type="checkbox"
-                checked={hideUnconnected}
-                onChange={() => setHideUnconnected((current) => !current)}
-              />
-              Hide unconnected
-            </label>
-            <span className="rs-lineage__count">
-              {visible.nodes.length} nodes, {links} link{links === 1 ? '' : 's'}
-            </span>
-          </div>
-        </Panel>
-        <Panel position="top-right">
-          <Details
-            node={focused}
-            edges={visible.edges}
-            byId={byId}
-            adminURLs={adminURLs}
-            onSelect={setSelected}
-          />
-        </Panel>
-      </ReactFlow>
+              <span className="rs-lineage__count">
+                {visible.nodes.length} nodes, {links} link{links === 1 ? '' : 's'}
+              </span>
+            </div>
+          </Panel>
+        </ReactFlow>
+      </div>
+      {/* Beside the graph on a wide canvas, under it on a narrow one (see lineage.css) */}
+      <Details
+        node={focused}
+        edges={visible.edges}
+        byId={byId}
+        adminURLs={adminURLs}
+        onSelect={setSelected}
+      />
     </div>
   );
 };
@@ -299,7 +325,7 @@ const Details: React.FC<{
 };
 
 const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
-  data: { node, state, selfLink },
+  data: { node, state, selfLink, onSelect, onTrace },
 }) => (
   <div
     className={`rs-lineage__node rs-lineage__node--${node.kind} rs-lineage__node--${state}`}
@@ -311,17 +337,27 @@ const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
       position={Position.Left}
       isConnectable={false}
     />
-    <span className="rs-lineage__label">
-      {node.label}
-      {selfLink && (
-        <span className="rs-lineage__self" title="Links to itself">
-          ↻
-        </span>
-      )}
-    </span>
-    <span className="rs-lineage__meta">
-      {node.kind} · {node.slug}
-    </span>
+    {/* A real button, so Tab reaches the node and Enter or Space opens its details */}
+    <button
+      type="button"
+      className="rs-lineage__select"
+      aria-label={`${node.label}, ${node.kind}: show what it's built from and what uses it`}
+      onClick={() => onSelect(node.id)}
+      onFocus={() => onTrace(node.id)}
+      onBlur={() => onTrace(null)}
+    >
+      <span className="rs-lineage__label">
+        {node.label}
+        {selfLink && (
+          <span className="rs-lineage__self" title="Links to itself">
+            ↻
+          </span>
+        )}
+      </span>
+      <span className="rs-lineage__meta">
+        {node.kind} · {node.slug}
+      </span>
+    </button>
     <Handle
       className="rs-lineage__handle"
       type="source"

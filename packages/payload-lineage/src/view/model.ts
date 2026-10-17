@@ -3,6 +3,17 @@
 import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
 
 export const NODE_WIDTH = 200;
+/**
+ * Below this canvas width the details panel goes under the graph instead of beside it, so it never
+ * covers the toolbar. Matches the `@container` query in `lineage.css`.
+ */
+export const STACKED_BELOW = 960;
+
+/** Room fitView leaves around the graph: the toolbar above, and the details panel when it's beside it. */
+export function fitPadding(layoutWidth: number) {
+  const right = layoutWidth > STACKED_BELOW ? '360px' : '24px';
+  return { top: '96px', right, bottom: '24px', left: '24px' } as const;
+}
 export const NODE_HEIGHT = 48;
 
 export type ViewFilter = {

@@ -138,13 +138,26 @@ export function erdLayoutInput(
   };
 }
 
-/** Collections and globals the viewer can't read leave the schema, with every relation to or from them. */
+/**
+ * Collections and globals the viewer can't read leave the schema, with every relation to or from
+ * them, and their slugs leave the `relationTo` of the fields that remain, so not even their names
+ * reach the browser.
+ */
 export function schemaForViewer(
   schema: Schema,
   canRead: (entity: SchemaEntity) => boolean,
 ): Schema {
-  const entities = schema.entities.filter(canRead);
-  const ids = new Set(entities.map((e) => e.id));
+  const readable = schema.entities.filter(canRead);
+  const ids = new Set(readable.map((e) => e.id));
+  const entities = readable.map((entity) => ({
+    ...entity,
+    fields: entity.fields.map((field) => {
+      if (!field.relationTo) return field;
+      const { relationTo, ...rest } = field;
+      const visible = relationTo.filter((slug) => ids.has(`collection:${slug}`));
+      return visible.length ? { ...rest, relationTo: visible } : rest;
+    }),
+  }));
   return {
     entities,
     relations: schema.relations.filter((r) => ids.has(r.from) && ids.has(r.to)),

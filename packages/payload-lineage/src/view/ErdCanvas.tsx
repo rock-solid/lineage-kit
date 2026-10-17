@@ -16,7 +16,7 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk.bundled.js';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Schema, SchemaEntity, SchemaField } from '../schema';
 import {
@@ -29,6 +29,7 @@ import {
   visibleRows,
   type ErdEdge,
 } from './erdModel';
+import { fitPadding } from './model';
 
 const elk = new ELK();
 
@@ -44,6 +45,9 @@ type TableData = {
   linked: Set<string>;
   state: TableState;
   onToggle: () => void;
+  onSelect: (id: string) => void;
+  /** Shows the table's references while its header has keyboard focus, as hover does. */
+  onTrace: (id: string | null) => void;
 };
 type TableNode = Node<TableData, 'table'>;
 
@@ -62,6 +66,7 @@ export const ErdCanvas: React.FC<ErdCanvasProps> = (props) => (
 
 const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
   const { fitView } = useReactFlow();
+  const layoutRef = useRef<HTMLDivElement>(null);
   const [showGlobals, setShowGlobals] = useState(true);
   const [keysOnly, setKeysOnly] = useState(false);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -113,7 +118,7 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
         if (cancelled) return;
         setPositions(new Map(layout.children?.map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }])));
         requestAnimationFrame(() =>
-          fitView({ padding: { top: '96px', right: '360px', bottom: '24px', left: '24px' } }),
+          fitView({ padding: fitPadding(layoutRef.current?.clientWidth ?? 0) }),
         );
       });
     return () => {
@@ -159,6 +164,8 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
             selfRefs: t.selfRefs,
             linked: t.linked,
             state,
+            onSelect: setSelected,
+            onTrace: setHovered,
             onToggle: () =>
               setExpanded((current) => {
                 const next = new Set(current);
@@ -210,62 +217,66 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
   const fieldCount = entities.reduce((n, e) => n + e.fields.length, 0);
 
   return (
-    <div className="rs-lineage" data-ready={positions ? '' : undefined}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        minZoom={0.1}
-        onNodeMouseEnter={(_, node) => setHovered(node.id)}
-        onNodeMouseLeave={() => setHovered(null)}
-        onNodeClick={(_, node) => setSelected(node.id)}
-        onPaneClick={() => setSelected(null)}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background gap={24} />
-        <Controls showInteractive={false} />
-        <MiniMap
-          pannable
-          zoomable
-          className="rs-lineage__minimap"
-          nodeClassName={(node) =>
-            `rs-lineage__minimap-node--${(node as TableNode).data.entity.kind}`
-          }
-          ariaLabel="Data model overview"
-        />
-        <Panel position="top-left">
-          <div className="rs-lineage__toolbar">
-            <label className="rs-lineage__toggle">
-              <input
-                type="checkbox"
-                checked={showGlobals}
-                onChange={() => setShowGlobals((v) => !v)}
-              />
-              <span className="rs-lineage__swatch rs-lineage__swatch--global" />
-              Globals
-            </label>
-            <label className="rs-lineage__toggle">
-              <input type="checkbox" checked={keysOnly} onChange={() => setKeysOnly((v) => !v)} />
-              Key fields only
-            </label>
-            <span className="rs-lineage__count">
-              {entities.length} tables, {fieldCount} fields, {lines.length} references
-            </span>
-          </div>
-        </Panel>
-        <Panel position="top-right">
-          <Details
-            entity={focused}
-            lines={lines}
-            byId={byId}
-            adminURLs={adminURLs}
-            onSelect={setSelected}
+    <div className="rs-lineage-layout" ref={layoutRef}>
+      <div className="rs-lineage" data-ready={positions ? '' : undefined}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          nodesDraggable={false}
+          // The node's own button takes keyboard focus, so React Flow's wrappers don't add tab stops
+          nodesFocusable={false}
+          edgesFocusable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          minZoom={0.1}
+          onNodeMouseEnter={(_, node) => setHovered(node.id)}
+          onNodeMouseLeave={() => setHovered(null)}
+          onNodeClick={(_, node) => setSelected(node.id)}
+          onPaneClick={() => setSelected(null)}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={24} />
+          <Controls showInteractive={false} />
+          <MiniMap
+            pannable
+            zoomable
+            className="rs-lineage__minimap"
+            nodeClassName={(node) =>
+              `rs-lineage__minimap-node--${(node as TableNode).data.entity.kind}`
+            }
+            ariaLabel="Data model overview"
           />
-        </Panel>
-      </ReactFlow>
+          <Panel position="top-left">
+            <div className="rs-lineage__toolbar">
+              <label className="rs-lineage__toggle">
+                <input
+                  type="checkbox"
+                  checked={showGlobals}
+                  onChange={() => setShowGlobals((v) => !v)}
+                />
+                <span className="rs-lineage__swatch rs-lineage__swatch--global" />
+                Globals
+              </label>
+              <label className="rs-lineage__toggle">
+                <input type="checkbox" checked={keysOnly} onChange={() => setKeysOnly((v) => !v)} />
+                Key fields only
+              </label>
+              <span className="rs-lineage__count">
+                {entities.length} tables, {fieldCount} fields, {lines.length} references
+              </span>
+            </div>
+          </Panel>
+        </ReactFlow>
+      </div>
+      {/* Beside the graph on a wide canvas, under it on a narrow one (see lineage.css) */}
+      <Details
+        entity={focused}
+        lines={lines}
+        byId={byId}
+        adminURLs={adminURLs}
+        onSelect={setSelected}
+      />
     </div>
   );
 };
@@ -375,7 +386,19 @@ const Details: React.FC<{
 };
 
 const TableView: React.FC<NodeProps<TableNode>> = ({
-  data: { entity, rows, hidden, expanded, canExpand, selfRefs, linked, state, onToggle },
+  data: {
+    entity,
+    rows,
+    hidden,
+    expanded,
+    canExpand,
+    selfRefs,
+    linked,
+    state,
+    onToggle,
+    onSelect,
+    onTrace,
+  },
 }) => (
   <div className={`rs-erd__table rs-lineage__node--${entity.kind} rs-erd__table--${state}`}>
     <Handle
@@ -385,7 +408,16 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
       position={Position.Left}
       isConnectable={false}
     />
-    <div className="rs-erd__header" title={entity.id}>
+    {/* A real button, so Tab reaches the table and Enter or Space opens its details */}
+    <button
+      type="button"
+      className="rs-erd__header"
+      title={entity.id}
+      aria-label={`${entity.label}, ${entity.kind}: show its references`}
+      onClick={() => onSelect(entity.id)}
+      onFocus={() => onTrace(entity.id)}
+      onBlur={() => onTrace(null)}
+    >
       <span className="rs-erd__title">{entity.label}</span>
       <span className="rs-erd__badge">
         {entity.kind === 'global'
@@ -396,7 +428,7 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
               ? 'upload'
               : entity.slug}
       </span>
-    </div>
+    </button>
     <ul className="rs-erd__rows">
       {rows.map((f) => (
         <li

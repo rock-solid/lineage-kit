@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ContentEdge, ContentGraph, ContentNode } from '../types';
-import { adminPath, forViewer, layoutInput, linksToItself, trace, visibleGraph } from './model';
+import {
+  adminPath,
+  fitPadding,
+  forViewer,
+  layoutInput,
+  linksToItself,
+  STACKED_BELOW,
+  trace,
+  visibleGraph,
+} from './model';
 
 const node = (kind: ContentNode['kind'], slug: string): ContentNode => ({
   id: `${kind}:${slug}`,
@@ -119,5 +128,13 @@ describe('adminPath and linksToItself', () => {
   it('spots a self-link', () => {
     expect(linksToItself('collection:pages', graph.edges)).toBe(true);
     expect(linksToItself('block:hero', graph.edges)).toBe(false);
+  });
+});
+
+describe('fitPadding', () => {
+  it('leaves room for the details panel only when it sits beside the graph', () => {
+    expect(fitPadding(STACKED_BELOW + 1).right).toBe('360px');
+    expect(fitPadding(STACKED_BELOW).right).toBe('24px');
+    expect(fitPadding(0).right).toBe('24px');
   });
 });

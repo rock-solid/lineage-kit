@@ -121,6 +121,49 @@ describe('layout and access', () => {
     ]);
   });
 
+  it('drops the names of collections the viewer can’t read from the fields that point at them', () => {
+    const schema = {
+      entities: [
+        {
+          id: 'collection:pages',
+          kind: 'collection',
+          slug: 'pages',
+          label: 'Pages',
+          singular: 'Page',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'owner', type: 'relationship', relationTo: ['users', 'private-records'] },
+            { name: 'records', type: 'join', relationTo: ['private-records'] },
+          ],
+        },
+        {
+          id: 'collection:users',
+          kind: 'collection',
+          slug: 'users',
+          label: 'Users',
+          singular: 'User',
+          fields: [],
+        },
+        {
+          id: 'collection:private-records',
+          kind: 'collection',
+          slug: 'private-records',
+          label: 'Private',
+          singular: 'Private',
+          fields: [],
+        },
+      ] as SchemaEntity[],
+      relations: [],
+    };
+    const visible = schemaForViewer(schema, (e) => e.slug !== 'private-records');
+    expect(visible.entities[0].fields).toEqual([
+      { name: 'title', type: 'text' },
+      { name: 'owner', type: 'relationship', relationTo: ['users'] },
+      { name: 'records', type: 'join' },
+    ]);
+    expect(JSON.stringify(visible)).not.toContain('private-records');
+  });
+
   it('drops tables the viewer can’t read, with their relations', () => {
     const schema = {
       entities: [
