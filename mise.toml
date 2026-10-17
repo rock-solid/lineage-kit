@@ -1,0 +1,43 @@
+# Tool versions. Keep pnpm in lockstep with `packageManager` in package.json.
+[tools]
+node = "24.21.0"
+pnpm = "12.8.1"
+
+# Tasks are thin aliases over the pnpm scripts in package.json, so non-mise users get the same
+# commands via `pnpm <script>`. Avoid task names that are mise built-ins (install, test-tool, fmt,
+# ...): `mise <name>` runs the built-in. Pass arguments after `--`: `mise release -- prepare minor`.
+[tasks.setup]
+description = "One-time setup for a fresh clone: dependencies, git hooks and the test browser"
+run = "pnpm run setup"
+
+[tasks.dev]
+description = "Build the addon in watch mode and start the example Storybook at http://localhost:6006"
+run = "pnpm dev"
+
+[tasks.build]
+description = "Build the packages to dist/"
+run = "pnpm build"
+
+[tasks.test]
+description = "Run the example's stories as browser tests, with play functions and a11y checks"
+run = "pnpm test"
+
+[tasks.lint]
+description = "Lint with ESLint"
+run = "pnpm lint"
+
+[tasks.typecheck]
+description = "Type-check every package"
+run = "pnpm typecheck"
+
+[tasks.format]
+description = "Format with Prettier"
+run = "pnpm format"
+
+[tasks.check]
+description = "Everything CI checks: format, build, lint, types and tests"
+run = "pnpm check"
+
+[tasks.release]
+description = "Release a package: `-- prepare <patch|minor|major|x.y.z>`, then `-- tag` after its PR merges"
+run = "pnpm release"

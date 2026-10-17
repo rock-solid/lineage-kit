@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "setup": "pnpm install && pnpm --filter example exec playwright install chromium",
     "build": "pnpm --filter \"./packages/**\" build",
     "dev": "pnpm build && pnpm --parallel --filter \"./packages/**\" --filter example dev",
     "lint": "eslint .",
@@ -14,6 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm --filter example test",
+    "check": "pnpm format:check && pnpm build && pnpm lint --max-warnings 0 && pnpm typecheck && pnpm test",
+    "release": "node scripts/release.mjs",
     "prepare": "if git rev-parse --git-dir >/dev/null 2>&1 && command -v lefthook >/dev/null 2>&1; then lefthook install; fi"
   },
   "devDependencies": {
