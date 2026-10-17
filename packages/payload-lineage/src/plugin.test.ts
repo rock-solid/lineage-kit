@@ -19,7 +19,7 @@ describe('lineagePlugin', () => {
       'out/lineage.json',
     );
     const onInit = vi.fn();
-    const result = await lineagePlugin({ outputFile, enabled: true })({ ...config, onInit });
+    const result = await lineagePlugin({ outputFile, adminView: false })({ ...config, onInit });
 
     await result.onInit!(payload({ collections: [{ slug: 'forms', fields: [] }] }));
 
@@ -30,9 +30,60 @@ describe('lineagePlugin', () => {
     });
   });
 
-  it('leaves the config alone when disabled or without an output file', async () => {
+  it('leaves the config alone when disabled', async () => {
     expect(await lineagePlugin({ outputFile: 'x.json', enabled: false })(config)).toBe(config);
-    expect(await lineagePlugin({ enabled: true })(config)).toBe(config);
+  });
+
+  it('adds the admin views and nav link, keeping the ones already there', async () => {
+    const access = () => true;
+    const result = await lineagePlugin({ exclude: ['block:text'], access })({
+      ...config,
+      custom: { mine: true },
+      admin: {
+        components: {
+          afterNavLinks: ['/Mine#Link'],
+          views: { mine: { Component: '/Mine', path: '/mine' } },
+        },
+      },
+    });
+    expect(result.admin?.components?.afterNavLinks).toEqual([
+      '/Mine#Link',
+      '@rock-solid/payload-lineage/rsc#LineageNavLink',
+    ]);
+    expect(result.admin?.components?.views).toEqual({
+      mine: { Component: '/Mine', path: '/mine' },
+      lineage: {
+        Component: '@rock-solid/payload-lineage/rsc#LineageView',
+        exact: true,
+        path: '/lineage',
+      },
+      lineageSchema: {
+        Component: '@rock-solid/payload-lineage/rsc#SchemaView',
+        exact: true,
+        path: '/lineage/schema',
+      },
+    });
+    // Server-only, where the pages and the nav link read their options and access
+    expect(result.custom).toEqual({
+      mine: true,
+      lineage: { graphOptions: { exclude: ['block:text'] }, access },
+    });
+    // No output file, so nothing runs on init
+    expect(result.onInit).toBeUndefined();
+  });
+
+  it('leaves the admin alone with adminView: false', async () => {
+    expect(await lineagePlugin({ adminView: false })(config)).toBe(config);
+  });
+
+  it('writes no file in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      const result = await lineagePlugin({ outputFile: 'x.json', adminView: false })(config);
+      expect(result).toBe(config);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('warns instead of failing init when the file can’t be written', async () => {
@@ -42,7 +93,7 @@ describe('lineagePlugin', () => {
     const outputFile = path.join(dir, 'blocker/lineage.json');
     const instance = payload({ collections: [] });
 
-    const result = await lineagePlugin({ outputFile, enabled: true })(config);
+    const result = await lineagePlugin({ outputFile, adminView: false })(config);
     await expect(result.onInit!(instance)).resolves.toBeUndefined();
 
     expect(instance.logger.warn).toHaveBeenCalledWith(
@@ -53,7 +104,7 @@ describe('lineagePlugin', () => {
 
   it('still fails init when the existing onInit throws', async () => {
     const onInit = () => Promise.reject(new Error('seed failed'));
-    const result = await lineagePlugin({ outputFile: 'x.json', enabled: true })({
+    const result = await lineagePlugin({ outputFile: 'x.json', adminView: false })({
       ...config,
       onInit,
     });

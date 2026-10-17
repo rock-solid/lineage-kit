@@ -1,7 +1,7 @@
 {
   "name": "@rock-solid/payload-lineage",
   "version": "0.0.0",
-  "description": "Content lineage from a Payload config: the collections, globals and blocks, and the fields that link them.",
+  "description": "Content lineage for Payload: the collections, globals and blocks, and the fields that link them, as a page in the admin and as JSON.",
   "keywords": [
     "payload",
     "payload-plugin",
@@ -20,28 +20,55 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./rsc": {
+      "types": "./dist/rsc.d.ts",
+      "import": "./dist/rsc.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "README.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@xyflow/react": "12.12.0",
+    "elkjs": "0.12.0"
+  },
   "devDependencies": {
+    "@payloadcms/next": "3.90.2",
+    "@payloadcms/ui": "3.90.2",
     "@types/node": "22.19.9",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "graphql": "16.14.2",
+    "next": "16.3.3",
     "payload": "3.90.2",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "tsup": "8.5.1",
     "typescript": "5.7.3",
     "vitest": "4.0.18"
   },
   "peerDependencies": {
-    "payload": "^3.0.0"
+    "@payloadcms/next": "^3.0.0",
+    "@payloadcms/ui": "^3.0.0",
+    "next": "^15.2.0 || ^16.0.0",
+    "payload": "^3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

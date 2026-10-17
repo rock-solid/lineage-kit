@@ -1,28 +1,64 @@
 # 🗺️ Roadmap
 
-Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to. For
-what it does today, see each package's README, e.g. the Storybook addon's
-[features](packages/storybook-addon-lineage#-features). It
-changes as we learn; open an issue to suggest or question anything here.
+Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to: first
+for the repo as a whole, then for each package. For what each does today, see its README, e.g. the
+Storybook addon's [features](packages/storybook-addon-lineage#-features). It changes as we learn;
+open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                             |                                        |
-| ------------------------------------- | ----------------------------------- | -------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial |
-| `@rock-solid/payload-lineage`         | In progress, not published          | See [Later](#-later)                   |
+| Package                               | Version                             |                                                                                                                                             |
+| ------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial                                                                                                      |
+| `@rock-solid/payload-lineage`         | 0.0.0, not published                | In review: [#6](https://github.com/rock-solid/lineage-kit/pull/6), then [#8](https://github.com/rock-solid/lineage-kit/pull/8) on top of it |
 
-## 🚀 Now
+## 🌐 Whole repo
 
-- **Decide how projects install it.** GitHub Packages needs a token wherever pnpm installs: every
-  developer, every CI job and every Docker build, because pnpm 12's supply-chain check fetches the
-  package's metadata ([Known issues](#-known-issues)). Publishing publicly on npmjs.com removes all of
-  that.
+### 🚀 Now
 
-## ⏭️ Next
+- **Decide how projects install the packages.** GitHub Packages needs a token wherever pnpm
+  installs: every developer, every CI job and every Docker build, because pnpm 12's supply-chain
+  check fetches the package's metadata ([Known issues](#-known-issues)). Publishing publicly on
+  npmjs.com removes all of that.
+
+### ⏭️ Next
 
 - **Public release on npmjs.com:** check that the `@rock-solid` npm org is free, make the repo public,
   switch the Release workflow's registry.
+- **Release more than one package.** The Release workflow only handles `storybook-addon-lineage@*`
+  tags and publishes that package; widen its tag and publish filters so `payload-lineage@0.1.0` can
+  ship.
+- **One graph package for both tools.** The ELK layout, the traversal and the React Flow parts are
+  written twice, in the Storybook addon and the Payload plugin; move the shared parts into one
+  package.
+- **Export a view as an image or a Mermaid diagram,** for docs, PRs and tickets. One Export button
+  on each page, exporting what's on screen, with its filters and focus:
+  - **PNG or SVG** of the canvas, in the current theme.
+  - **Mermaid**, which GitHub, GitLab and most docs tools render from text, so it can be pasted into a
+    PR description and reviewed like code. The Storybook graph and the Payload lineage become a
+    `flowchart LR`; the Payload data model an `erDiagram`, whose crow's-foot notation carries
+    `many-to-one` and the rest (`}o--||`).
+  - The same as functions (`toMermaid(graph)`, `toMermaid(schema)`), so a script or a CI job can keep
+    a diagram in the docs up to date.
+  - Large graphs make unreadable Mermaid, so the export should warn past a size, e.g. 50 nodes, and
+    suggest focusing first.
+
+### 🐞 Known issues
+
+- **Installs need a GitHub token.** Beyond `pnpm install`, pnpm re-checks the lockfile's
+  supply-chain policy on fresh clones and after lockfile or workspace changes, and that check also
+  needs the token. Until then even `pnpm test:storybook` fails with a 401.
+- **New versions are blocked by pnpm's minimum release age** unless the project exempts the scope
+  (`minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`).
+- **The release log warns "Skipped OIDC"**: pnpm tries OIDC provenance first, which GitHub Packages
+  doesn't use. Harmless.
+
+## 📚 Storybook addon
+
+`@rock-solid/storybook-addon-lineage`: the import graph of your components, as a page in Storybook.
+
+### ⏭️ Next
+
 - **A lineage block on every Docs page:** a small graph centred on the component, linking to the
   full page.
 - **A selector box:** type dbt syntax (`2+Button+1`, `+FeatureGrid`, `Button,Card`,
@@ -31,30 +67,20 @@ changes as we learn; open an issue to suggest or question anything here.
   mode.
 - **Dark mode** that follows Storybook's theme.
 
-## 🔭 Later
+### 🔭 Later
 
-- **`@rock-solid/payload-lineage`:** the content side of lineage, from a Payload config.
-  - Collections, globals and blocks as nodes, with `relationship` and `upload` fields as edges.
-  - Which pages use which blocks, from the documents themselves.
-  - Which blocks and collections use each shared field config (found by import scan, since Payload
-    inlines fields).
-  - An admin view at `/admin/lineage`, and a JSON export the Storybook page can merge, so a
-    component shows the blocks, collections and pages that use it.
-  - A drift check against hand-written inventories, e.g. a "page layouts and components" doc.
+- **The content side in Storybook:** merge the Payload plugin's graph into the page, so a component
+  shows the blocks, collections and pages that use it (see the
+  [Payload plugin](#-payload-plugin)).
 - **Impact in CI:** a CLI that lists the stories a branch affects (`state:modified+`), to run only
   those story tests and post them on the PR.
 - **Architecture rules:** report import rules from the same graph, e.g. "components don't import
   generated CMS types".
 
-## 🐞 Known issues
+### 🐞 Known issues
 
 Things that misbehave today. Fixes welcome.
 
-- **Installs need a GitHub token.** Beyond `pnpm install`, pnpm re-checks the lockfile's
-  supply-chain policy on fresh clones and after lockfile or workspace changes, and that check also
-  needs the token. Until then even `pnpm test:storybook` fails with a 401.
-- **New versions are blocked by pnpm's minimum release age** unless the project exempts the scope
-  (`minimumReleaseAgeExclude: ['@rock-solid/*']` in `pnpm-workspace.yaml`).
 - **The graph doesn't rebuild for changes outside the source folder.** A new `tsconfig.json` alias, or
   fetching `origin/main` (which moves the changed-files baseline), shows up after the next source
   edit or a Storybook restart.
@@ -63,10 +89,8 @@ Things that misbehave today. Fixes welcome.
 - **A click takes 250ms to focus,** so it can be told apart from a double-click.
 - **Hidden layers break chains.** An edge through a hidden file (A → utility → B) isn't drawn as A → B,
   so with "Hide unconnected files" on, files whose only links go through hidden layers disappear.
-- **The release log warns "Skipped OIDC"**: pnpm tries OIDC provenance first, which GitHub Packages
-  doesn't use. Harmless.
 
-## 🚧 Limitations
+### 🚧 Limitations
 
 What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 
@@ -94,11 +118,10 @@ What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 - **Large graphs are untested.** It's used on ~150 files; layout and rendering at 1,000+ nodes haven't
   been measured.
 
-## 💡 Ideas
+### 💡 Ideas
 
 Not committed to; open an issue if one would help you.
 
-- Export the graph or a focused view as PNG, SVG or Mermaid, for docs and PRs.
 - Group nodes into a column per layer, as dbt does with sources, staging and marts.
 - Collapse a folder into one node.
 - Node details: lines of code, last change, owners from `CODEOWNERS`.
@@ -106,6 +129,83 @@ Not committed to; open an issue if one would help you.
 - Open a file in the editor from its node.
 - Compare the graph between two branches.
 - A VS Code view of the same graph.
+
+## 🧬 Payload plugin
+
+`@rock-solid/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
+and Data model pages in the admin. Tried on connect-hospitality (Payload 3.90, 8 collections, 2
+globals, 22 blocks).
+
+### 🚀 Now
+
+- **Land #6 and #8.** Open both pages logged in (the steps #8 marks _for the reviewer_), fix what
+  looks wrong, merge.
+
+### ⏭️ Next
+
+- **Changed since main**, as the Storybook addon has, including what was deleted.
+  - The plugin also writes `lineage/schema.json`, and both files are committed. On a branch, the
+    pages read `main`'s copies (`git show origin/main:lineage/schema.json`) and compare them with the
+    running config.
+  - Lineage: added, changed and deleted nodes and links. Data model: tables added or deleted, and
+    fields added, removed or changed (type, required, what they reference).
+  - Deleted nodes and tables stay on the page, faded, dashed and struck through, with the links
+    they had, so it's clear what they connected.
+  - A "Changed since main" toggle that shows only the changes and what they affect, like dbt's
+    `state:modified+`.
+  - Needs git and the base branch, so it works in `next dev` and CI, not on a production server,
+    where the toggle is hidden. The first PR that commits the files has nothing to compare with.
+- **Links inside rich text.** A Lexical `LinkFeature` with `enabledCollections`, an
+  `UploadFeature` or a `BlocksFeature` can reference collections and blocks from inside the editor;
+  today those aren't edges. Reading them means going into Lexical's resolved feature config, which can
+  change between Payload versions, so it needs its own tests.
+- **Which pages use which blocks**, from the documents: how many documents use each block, which
+  pages they are, and which blocks nothing uses. Queried when the page is opened and cached, never on
+  each request.
+- **Merge into the Storybook page** (see the [Storybook addon](#-storybook-addon)). Needs a
+  block-to-component map: from `RenderBlocks`, or a convention like `src/blocks/<Name>/config.ts`
+  next to `Component.tsx`.
+
+### 🔭 Later
+
+- **Shared field configs,** found by import scan, since Payload inlines fields: which blocks and
+  collections use `link`, `linkGroup` or `sectionHeaderFields`.
+- **A drift check** against hand-written inventories, such as a "page layouts and components" or a
+  content model doc, in CI.
+- **Pending database changes:** compare the config with the latest migration snapshot
+  (`src/migrations/*.json`) to show what `migrate:create` would change, before running it.
+
+### 🐞 Known issues
+
+- **Nobody has opened the pages logged in yet.** The redirects, the data and the layouts are tested,
+  but not how the pages look (#8).
+- **Links inside rich text are missing** from both pages (see Next).
+- **Form-builder's field blocks crowd the lineage graph** (`checkbox`, `email`, `text`, …) unless
+  listed in `exclude`.
+- **A build needs `payload generate:importmap`** after installing or upgrading; `next dev` does it on
+  its own.
+- **ERD sentences use the config's labels,** so an uncountable singular ("a Media") or a plural that
+  isn't one ("many Team") reads oddly. Setting `labels` on the collection fixes it, in the admin too.
+
+### 🚧 Limitations
+
+- **The config only.** Both pages show the model, not the content: no documents, counts or usage yet.
+- **Payload 3 on Next.js 15 or 16, with React 19.**
+- **Blocks have no access control of their own,** so anyone who can open the pages sees every block.
+- **References that go both ways** (a page uses a block that links back to pages) are cycles; the
+  lineage page draws the link back as running backwards instead of moving the block after the page.
+- **A polymorphic reference is one line per collection,** and a join field is a row, not a line,
+  since it reverses a reference that already is one.
+- **Built on each visit,** in well under a millisecond on ~30 nodes; not measured on hundreds of
+  collections.
+
+### 💡 Ideas
+
+Not committed to; open an issue if one would help you.
+
+- Show a collection's hooks, access functions and versions/drafts settings on its table.
+- Link a block's node to the component that renders it, in the editor.
+- A "where is this used" panel on each collection's own admin page.
 
 ## 🙋 Suggest something
 
