@@ -33,6 +33,14 @@ describe('releaseTarget', () => {
     assert.equal(distTag, 'next');
   });
 
+  it('reads only the part before build metadata for a prerelease', () => {
+    const distTag = (version) =>
+      releaseTarget(`x@${version}`, () => ({ name: 'x', version })).distTag;
+    assert.equal(distTag('1.2.3+build-7'), 'latest');
+    assert.equal(distTag('1.2.3+sha.abc'), 'latest');
+    assert.equal(distTag('1.2.3-rc.1+build-7'), 'next');
+  });
+
   it("refuses a tag that doesn't match the package's version", () => {
     assert.match(target('payload-lineage@0.2.0').error, /at 0\.1\.0/);
   });

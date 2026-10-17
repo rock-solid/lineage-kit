@@ -34,7 +34,8 @@ export function releaseTarget(tag, readPackage = readPackageJson) {
     version,
     registry,
     github: new URL(registry).hostname === 'npm.pkg.github.com',
-    distTag: version.includes('-') ? 'next' : 'latest',
+    // A prerelease has a `-` before any `+build` metadata, which can contain hyphens of its own
+    distTag: version.split('+')[0].includes('-') ? 'next' : 'latest',
   };
 }
 
