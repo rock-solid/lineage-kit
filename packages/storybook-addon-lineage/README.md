@@ -97,6 +97,9 @@ write.
 
 ## 🚧 Limits
 
+- Storybook 10 on Vite with React only.
+- One node per file, from static imports. Type-only imports aren't edges.
 - Story titles and `component` must be written as literals for a story to link.
-- The Lineage page isn't collected by `@storybook/addon-vitest`, which only runs the stories in your
-  own `stories` globs, so your story tests don't depend on the addon.
+
+Known issues, the full list of limitations, and what's planned:
+[ROADMAP.md](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md).
