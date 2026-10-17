@@ -5,10 +5,10 @@ used, and what a change affects.
 
 ## 📦 Packages
 
-| Package                                                                         | Status |                                                                                                                       |
-| ------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| [`@rocksoliddigital/storybook-addon-lineage`](packages/storybook-addon-lineage) | 0.1    | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
-| [`@rocksoliddigital/payload-lineage`](packages/payload-lineage)                 | 0.0    | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
+| Package                                                                         | npm                                                                                                                                                       |                                                                                                                       |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [`@rocksoliddigital/storybook-addon-lineage`](packages/storybook-addon-lineage) | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/storybook-addon-lineage)](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
+| [`@rocksoliddigital/payload-lineage`](packages/payload-lineage)                 | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/payload-lineage)](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)                 | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
 
 ## 🚀 Quick start
 
@@ -105,8 +105,8 @@ commit on `main`.
 ## 📤 Releasing
 
 Releases use [Changesets](https://github.com/changesets/changesets). The two published packages
-share one version and are always released together, so `0.2.0` of the addon goes with `0.2.0` of
-the plugin. A PR that changes what a package does adds a changeset:
+share one version and are always released together, so each addon version goes with the plugin
+version of the same number. A PR that changes what a package does adds a changeset:
 
 ```sh
 pnpm changeset   # pick the packages and the bump, then write the changelog line
@@ -118,7 +118,7 @@ none.
 
 Once changesets reach `main`, the Release workflow opens a **Version Packages** PR, and keeps it up
 to date: it bumps the versions and writes each package's `CHANGELOG.md`. Merging it publishes the
-new versions to npmjs.com with provenance, tags them (e.g. `@rocksoliddigital/payload-lineage@0.2.0`) and
+new versions to npmjs.com with provenance, tags them (`@rocksoliddigital/payload-lineage@<version>`) and
 creates their GitHub Releases. GitHub doesn't let a PR the workflow opens start other workflows, so
 close and reopen the Version Packages PR to run its checks. For a prerelease, see Changesets'
 [prerelease guide](https://github.com/changesets/changesets/blob/main/docs/prereleases.md).

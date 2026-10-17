@@ -7,19 +7,18 @@ open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                                     | Version                                                                  |                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `@rocksoliddigital/storybook-addon-lineage` | 0.1.1 as `@rock-solid/…` on GitHub Packages (private); next on npmjs.com | On trial in a client project                                         |
-| `@rocksoliddigital/payload-lineage`         | 0.0.0, in `main`, not published                                          | Lineage and Data model pages in the admin, tried on a client project |
+| Package                                     | Where                                                                                |                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------- |
+| `@rocksoliddigital/storybook-addon-lineage` | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | On trial in a client project |
+| `@rocksoliddigital/payload-lineage`         | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)         | Tried on a client project    |
 
 ## 🌐 Whole repo
 
 ### 🚀 Now
 
-- **Go public on npmjs.com.** Releases use Changesets and publish there under the
-  `@rocksoliddigital` org with trusted publishing. What's left: a trusted publisher for each
-  package, the repo made public, then merging the first Version Packages PR (see the README's
-  [Releasing](README.md#-releasing)).
+- **Trusted publishing on npmjs.com.** The packages are on npm, and each has the Release workflow
+  as its trusted publisher, pending validation: the next release through the workflow (merging a
+  Version Packages PR) validates it. Until then, a publish needs a maintainer's passkey.
 
 ### ⏭️ Next
 
@@ -40,8 +39,8 @@ open an issue to suggest or question anything here.
 
 ### 🐞 Known issues
 
-- **Installing 0.1.1 or earlier needs a GitHub token:** those versions are on GitHub Packages only,
-  as `@rock-solid/storybook-addon-lineage` (npm's `@rock-solid` scope belongs to someone else).
+- **The old `@rock-solid/storybook-addon-lineage` needs a GitHub token:** it's on GitHub Packages
+  only (npm's `@rock-solid` scope belongs to someone else). Install `@rocksoliddigital/…` from npm.
   Beyond `pnpm install`, pnpm re-checks the lockfile's supply-chain policy on fresh clones and after
   lockfile or workspace changes, and that check needs the token too; without it, even a project's
   Storybook tests fail with a 401 in CI.
@@ -130,11 +129,6 @@ Not committed to; open an issue if one would help you.
 `@rocksoliddigital/payload-lineage`: the content side of lineage, from a Payload config, as the Lineage
 and Data model pages in the admin. Tried on a client project (Payload 3.90, 8 collections, 2
 globals, 22 blocks); `examples/payload` is a small one to develop against.
-
-### 🚀 Now
-
-- **First release, 0.2.0,** with the move to npmjs.com (see [Whole repo](#-whole-repo)). Both
-  packages share that version from then on; its changeset is waiting in `.changeset/`.
 
 ### ⏭️ Next
 

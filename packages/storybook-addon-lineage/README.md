@@ -56,8 +56,8 @@ Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vit
 pnpm add -D @rocksoliddigital/storybook-addon-lineage
 ```
 
-Versions up to 0.1.1 were published to GitHub Packages only, as `@rock-solid/storybook-addon-lineage`;
-later ones are on npmjs.com under this name.
+Before moving to npmjs.com, it was published to GitHub Packages as
+`@rock-solid/storybook-addon-lineage`.
 
 If the project sets pnpm's `minimumReleaseAge`, a new version can't be installed until it's that
 old; exempt the scope with `minimumReleaseAgeExclude: ['@rocksoliddigital/*']` in `pnpm-workspace.yaml`.
