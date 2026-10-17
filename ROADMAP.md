@@ -1,16 +1,17 @@
 # 🗺️ Roadmap
 
-Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to. For
+Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to. The
+Payload plugin has [its own roadmap](packages/payload-lineage/ROADMAP.md). For
 what it does today, see each package's README, e.g. the Storybook addon's
 [features](packages/storybook-addon-lineage#-features). It
 changes as we learn; open an issue to suggest or question anything here.
 
 ## 🧭 Status
 
-| Package                               | Version                             |                                        |
-| ------------------------------------- | ----------------------------------- | -------------------------------------- |
-| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial |
-| `@rock-solid/payload-lineage`         | In progress, not published          | See [Later](#-later)                   |
+| Package                               | Version                             |                                                        |
+| ------------------------------------- | ----------------------------------- | ------------------------------------------------------ |
+| `@rock-solid/storybook-addon-lineage` | 0.1.1, on GitHub Packages (private) | Used in connect-hospitality as a trial                 |
+| `@rock-solid/payload-lineage`         | In progress, not published          | Its own [roadmap](packages/payload-lineage/ROADMAP.md) |
 
 ## 🚀 Now
 
@@ -33,14 +34,9 @@ changes as we learn; open an issue to suggest or question anything here.
 
 ## 🔭 Later
 
-- **`@rock-solid/payload-lineage`:** the content side of lineage, from a Payload config.
-  - Collections, globals and blocks as nodes, with `relationship` and `upload` fields as edges.
-  - Which pages use which blocks, from the documents themselves.
-  - Which blocks and collections use each shared field config (found by import scan, since Payload
-    inlines fields).
-  - An admin view at `/admin/lineage`, and a JSON export the Storybook page can merge, so a
-    component shows the blocks, collections and pages that use it.
-  - A drift check against hand-written inventories, e.g. a "page layouts and components" doc.
+- **The content side in Storybook:** merge `@rock-solid/payload-lineage`'s graph into the
+  Storybook page, so a component shows the blocks, collections and pages that use it. The Payload
+  plugin has its own [roadmap](packages/payload-lineage/ROADMAP.md).
 - **Impact in CI:** a CLI that lists the stories a branch affects (`state:modified+`), to run only
   those story tests and post them on the PR.
 - **Architecture rules:** report import rules from the same graph, e.g. "components don't import
