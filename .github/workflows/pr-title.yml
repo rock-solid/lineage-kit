@@ -1,8 +1,8 @@
 name: PR title
 
 # Squash merges use the PR title as the commit on main. The local commit-msg hook is skippable
-# with --no-verify; this check is not. The rules live in rock-solid/github-actions: this repo's
-# commitlint.config.mjs when it has one, else the org default.
+# with --no-verify; this check is not. It runs commitlint from the repo's own dev dependencies,
+# with the rules in commitlint.config.mjs, so it works in a public repo and in forks.
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize]
@@ -12,11 +12,25 @@ permissions:
 
 jobs:
   conventional:
-    # Mirrors of this repo (e.g. evt-it/RS-*) copy .github/workflows/ too and can't resolve the
-    # private action, so skip the job there. It must be job-level: every `uses:` in a job is
-    # resolved before any step-level `if:` runs.
-    if: github.repository_owner == 'rock-solid'
+    # Branch rules require this check by name
     name: Conventional Commits
     runs-on: ubuntu-latest
     steps:
-      - uses: rock-solid/github-actions/actions/pr-title-lint@v1
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The title goes through env, never into the script, so a crafted title can't inject shell
+      - name: Lint the PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! printf '%s\n' "$PR_TITLE" | pnpm exec commitlint --config commitlint.pr-title.config.mjs --verbose; then
+            # The title stays out of the annotation: it's untrusted input, and commitlint's
+            # output above already shows it
+            echo "::error title=PR title::Not a Conventional Commit. Use \"type(scope): TICKET-123 | lowercase description\", or drop \"TICKET-123 | \" when there is no ticket."
+            exit 1
+          fi
