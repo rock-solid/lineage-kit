@@ -14,6 +14,10 @@ run = "pnpm run setup"
 description = "Build the addon in watch mode and start the example Storybook at http://localhost:6006"
 run = "pnpm dev"
 
+[tasks.dev-payload]
+description = "Build the Payload plugin in watch mode and start the example Payload admin at http://localhost:3000/admin"
+run = "pnpm dev:payload"
+
 [tasks.build]
 description = "Build the packages to dist/"
 run = "pnpm build"

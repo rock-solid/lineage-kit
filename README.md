@@ -49,17 +49,18 @@ Either way, setup installs the dependencies, the git hooks and the Chromium the 
 
 Every mise task is an alias over a pnpm script, so both columns run the same thing.
 
-| Script           | mise                | What it does                                                                             |
-| ---------------- | ------------------- | ---------------------------------------------------------------------------------------- |
-| `pnpm run setup` | `mise setup`        | One-time setup: dependencies, git hooks, test browser                                    |
-| `pnpm dev`       | `mise dev`          | Builds the addon in watch mode and starts the example Storybook at http://localhost:6006 |
-| `pnpm build`     | `mise build`        | Builds the packages to `dist/`                                                           |
-| `pnpm test`      | `mise test`         | Runs the example's stories as browser tests, with play functions and a11y checks         |
-| `pnpm lint`      | `mise lint`         | ESLint                                                                                   |
-| `pnpm typecheck` | `mise typecheck`    | TypeScript, every package                                                                |
-| `pnpm format`    | `mise format`       | Prettier                                                                                 |
-| `pnpm check`     | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build  |
-| `pnpm release …` | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                |
+| Script             | mise                | What it does                                                                                        |
+| ------------------ | ------------------- | --------------------------------------------------------------------------------------------------- |
+| `pnpm run setup`   | `mise setup`        | One-time setup: dependencies, git hooks, test browser                                               |
+| `pnpm dev`         | `mise dev`          | Builds the addon in watch mode and starts the example Storybook at http://localhost:6006            |
+| `pnpm dev:payload` | `mise dev-payload`  | Builds the Payload plugin in watch mode and starts the example admin at http://localhost:3000/admin |
+| `pnpm build`       | `mise build`        | Builds the packages to `dist/`                                                                      |
+| `pnpm test`        | `mise test`         | Runs the example's stories as browser tests, with play functions and a11y checks                    |
+| `pnpm lint`        | `mise lint`         | ESLint                                                                                              |
+| `pnpm typecheck`   | `mise typecheck`    | TypeScript, every package                                                                           |
+| `pnpm format`      | `mise format`       | Prettier                                                                                            |
+| `pnpm check`       | `mise check`        | Everything CI checks: format, build, lint, types, tests and the example Storybook build             |
+| `pnpm release …`   | `mise release -- …` | Maintainers: see [Releasing](#-releasing)                                                           |
 
 ### 🗂️ Project layout
 
@@ -68,6 +69,9 @@ Every mise task is an alias over a pnpm script, so both columns run the same thi
   - `src/vite-plugin.ts` serves it to the viewer and rebuilds it on changes.
   - `src/preset.ts` wires both into Storybook and adds the Lineage page.
   - `src/manager.tsx` is the toolbar button, `src/LineageGraph.tsx` the viewer.
+- `examples/payload`: a minimal Payload app (SQLite, no database server) that installs the plugin
+  from the workspace. On first start, create a user at http://localhost:3000/admin, then open
+  Lineage in the nav. Its `src/lineage.test.ts` checks the plugin against this real config.
 - `examples/react`: a small Storybook that installs the addon from the workspace. Develop against
   it; its `src/lineage.test.stories.tsx` tests the viewer on fixture graphs.
 - `scripts/release.mjs`: the release script.
