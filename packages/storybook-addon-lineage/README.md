@@ -18,6 +18,8 @@ Works with Storybook 10 on Vite (`@storybook/react-vite`, `@storybook/nextjs-vit
 - **Search** every file, hidden layers included; picking a result switches its layer on.
 - **Hide unconnected files**, counts of files, imports and files without a story, a minimap, and pan
   and zoom.
+- **Copy as Mermaid** copies the graph as shown, focus and hidden layers included, as a Mermaid
+  flowchart: paste it into a PR, a doc or a ticket, and GitHub, GitLab and most docs tools draw it.
 
 **🎯 Focus**
 
@@ -105,13 +107,13 @@ write.
 
 ### 🎛️ Options
 
-| Option       | Default           |                                                                                                                                                                                                                      |
-| ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcDir`     | `'src'`           | Folder to scan, relative to the project root (the folder above `.storybook`)                                                                                                                                         |
-| `tsConfig`   | `'tsconfig.json'` | Its `paths` resolve aliases such as `@/`                                                                                                                                                                             |
-| `exclude`    | `[]`              | Path patterns (regex source) to leave out, e.g. generated files                                                                                                                                                      |
-| `baseBranch` | `'main'`          | Branch that changed files are compared with; `origin/<branch>` is tried first                                                                                                                                        |
-| `layers`     | one layer         | `{ id, label, match, color, hidden? }`, matched against paths from the project root, first match wins. `hidden` layers start switched off. Node text is white, so keep each colour at 4.5:1 or better against white. |
+| Option       | Default           |                                                                                                                                                                                                                                                                                                                                                               |
+| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcDir`     | `'src'`           | Folder to scan, relative to the project root (the folder above `.storybook`)                                                                                                                                                                                                                                                                                  |
+| `tsConfig`   | `'tsconfig.json'` | Its `paths` resolve aliases such as `@/`                                                                                                                                                                                                                                                                                                                      |
+| `exclude`    | `[]`              | Path patterns (regex source) to leave out, e.g. generated files                                                                                                                                                                                                                                                                                               |
+| `baseBranch` | `'main'`          | Branch that changed files are compared with; `origin/<branch>` is tried first                                                                                                                                                                                                                                                                                 |
+| `layers`     | one layer         | `{ id, label, match, color, hidden? }`, matched against paths from the project root, first match wins. `hidden` layers start switched off. Node text is white, so keep each colour at 4.5:1 or better against white. Use hex (`#2563eb`) or a colour name: Mermaid can't read `rgb()`, `hsl()` or `var()`, so Copy as Mermaid leaves those layers uncoloured. |
 
 ## 🔍 How it works
 
