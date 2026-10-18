@@ -58,7 +58,8 @@ open an issue to suggest or question anything here.
   shows the blocks, collections and pages that use it (see the
   [Payload plugin](#-payload-plugin)).
 - **Impact in CI:** a CLI that lists the stories a branch affects (`state:modified+`), to run only
-  those story tests and post them on the PR.
+  those story tests and post them on the PR. It can share its commands with the Payload plugin's
+  CLI (see the [Payload plugin](#-payload-plugin)).
 - **Architecture rules:** report import rules from the same graph, e.g. "components don't import
   generated CMS types".
 
@@ -123,6 +124,15 @@ globals, 22 blocks); `examples/payload` is a small one to develop against.
 
 ### ⏭️ Next
 
+- **A CLI,** so a script or CI job gets the graphs without a running admin or a login. The plugin
+  registers a command through Payload's `bin` config, which reads the same config the pages do:
+  - `payload lineage mermaid` prints the lineage as a Mermaid flowchart, and `--schema` the data
+    model as an `erDiagram`.
+  - `payload lineage json` prints the graph or, with `--schema`, the data model as JSON.
+  - `--out <file>` writes to a file, so a committed diagram can be kept up to date, and `--check`
+    fails when that file is out of date, for CI.
+  - The same filters as the pages: `exclude`, and a focus with a depth to keep large graphs
+    readable: `--focus collection:pages --depth 2`.
 - **Changed since main**, as the Storybook addon has, including what was deleted.
   - The plugin also writes `lineage/schema.json`, and both files are committed. On a branch, the
     pages read `main`'s copies (`git show origin/main:lineage/schema.json`) and compare them with the
