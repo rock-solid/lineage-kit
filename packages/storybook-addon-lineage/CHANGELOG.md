@@ -1,5 +1,11 @@
 # @rocksoliddigital/storybook-addon-lineage
 
+## 0.3.0
+
+### Minor Changes
+
+- [#23](https://github.com/rock-solid/lineage-kit/pull/23) [`cf28097`](https://github.com/rock-solid/lineage-kit/commit/cf28097f348d19839131e089f1e5b6a1c934c3da) Thanks [@godhand1607](https://github.com/godhand1607)! - Copy a view as a Mermaid diagram, for pasting into a PR, a doc or a ticket. The Storybook graph and the Payload Lineage page copy a flowchart of what they show; the Data model page copies an `erDiagram` in crow's-foot notation. The Payload plugin also exports `contentGraphToMermaid` and `schemaToMermaid` for scripts.
+
 ## 0.2.0
 
 ### Patch Changes
