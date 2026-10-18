@@ -2,8 +2,9 @@
 // running config. Deleted nodes, links, tables, fields and references stay in the result, marked
 // as such, so the pages can show what they connected.
 
+import { excluder } from './exclude';
 import type { Schema, SchemaEntity, SchemaField, SchemaRelation } from './schema';
-import type { ContentEdge, ContentGraph, ContentNode } from './types';
+import type { ContentEdge, ContentGraph, ContentGraphOptions, ContentNode } from './types';
 
 export type Change = 'added' | 'changed' | 'deleted';
 export type WithChange<T> = T & { change?: Change };
@@ -74,6 +75,47 @@ export function diffGraph(base: ContentGraph, current: ContentGraph): DiffedGrap
   return { nodes, edges };
 }
 
+/**
+ * The base branch's graph under the running config's `exclude`: what's excluded now isn't deleted,
+ * and must not come back as deleted, past the access checks deleted items skip.
+ */
+export function excludeFromGraph(graph: ContentGraph, options: ContentGraphOptions): ContentGraph {
+  const excluded = excluder(options);
+  const nodes = graph.nodes.filter((n) => !excluded(n.kind, n.slug));
+  const ids = new Set(nodes.map((n) => n.id));
+  return { nodes, edges: graph.edges.filter((e) => ids.has(e.source) && ids.has(e.target)) };
+}
+
+/**
+ * The base branch's data model under the running config's `exclude`, as `buildSchema` applies it:
+ * excluded tables go, with their relations; blocks fields stop listing excluded blocks; and an
+ * excluded block's fields, which `buildSchema` doesn't walk, take their relations with them.
+ */
+export function excludeFromSchema(schema: Schema, options: ContentGraphOptions): Schema {
+  const excluded = excluder(options);
+  const entities = schema.entities
+    .filter((e) => !excluded(e.kind, e.slug))
+    .map((entity) => ({
+      ...entity,
+      fields: entity.fields.map((field) => withoutExcluded(field, excluded)),
+    }));
+  const ids = new Set(entities.map((e) => e.id));
+  const relations = schema.relations.filter(
+    (r) =>
+      ids.has(r.from) &&
+      ids.has(r.to) &&
+      ![...r.path.matchAll(/\[([^\]]+)\]/g)].some(([, block]) => excluded('block', block)),
+  );
+  return { entities, relations };
+}
+
+function withoutExcluded(field: SchemaField, excluded: ReturnType<typeof excluder>): SchemaField {
+  // As `buildSchema` writes it: a blocks field lists only blocks that aren't excluded, while
+  // `relationTo` keeps every slug (the pages drop the ones the viewer can't read)
+  if (!field.blocks) return field;
+  return { ...field, blocks: field.blocks.filter((slug) => !excluded('block', slug)) };
+}
+
 export function relationKey(r: Pick<SchemaRelation, 'from' | 'path' | 'to'>) {
   return `${r.from}|${r.path}->${r.to}`;
 }
@@ -110,7 +152,28 @@ export function diffSchema(base: Schema, current: Schema): DiffedSchema {
   for (const [key, relation] of baseRelations) {
     if (!currentRelations.has(key)) relations.push({ ...relation, change: 'deleted' });
   }
-  return { entities, relations };
+
+  // A reference can change while its row doesn't, e.g. a field inside a block pointing somewhere
+  // else; the row it belongs to, and its table, changed all the same
+  const relinked = new Map<string, Set<string>>();
+  for (const r of relations) {
+    if (!r.change) continue;
+    const rows = relinked.get(r.from) ?? new Set<string>();
+    rows.add(r.field);
+    relinked.set(r.from, rows);
+  }
+  const marked = entities.map((entity) => {
+    const rows = relinked.get(entity.id);
+    if (!rows || entity.change === 'added' || entity.change === 'deleted') return entity;
+    return {
+      ...entity,
+      change: 'changed' as const,
+      fields: entity.fields.map((f) =>
+        rows.has(f.name) && !f.change ? { ...f, change: 'changed' as const } : f,
+      ),
+    };
+  });
+  return { entities: marked, relations };
 }
 
 function diffFields(before: SchemaField[], after: SchemaField[]): DiffedField[] {

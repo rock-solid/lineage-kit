@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { diffGraph, diffSchema } from './diff';
+import { diffGraph, diffSchema, excludeFromGraph, excludeFromSchema } from './diff';
 import type { Schema, SchemaEntity } from './schema';
 import type { ContentEdge, ContentGraph, ContentNode } from './types';
 
@@ -136,7 +136,8 @@ describe('diffSchema', () => {
       'id:-',
       'title:changed',
       'summary:deleted',
-      'hero:-',
+      // Its own settings are the same, but its reference became a list
+      'hero:changed',
       'slug:added',
     ]);
     expect(pages.fields[1].before).toEqual({ name: 'title', type: 'text' });
@@ -144,5 +145,98 @@ describe('diffSchema', () => {
 
   it('marks a reference whose cardinality changed', () => {
     expect(diff.relations.map((r) => r.change)).toEqual(['changed']);
+  });
+});
+
+describe('changes against the running config’s exclude', () => {
+  it('doesn’t bring back a collection excluded since as deleted, with its links', () => {
+    const base: ContentGraph = {
+      nodes: [node('collection', 'pages'), node('collection', 'posts')],
+      edges: [edge('collection:posts', 'collection:pages')],
+    };
+    const current: ContentGraph = { nodes: [node('collection', 'pages')], edges: [] };
+    const diff = diffGraph(excludeFromGraph(base, { exclude: ['posts'] }), current);
+    expect(diff.nodes.map((n) => n.id)).toEqual(['collection:pages']);
+    expect(diff.edges).toEqual([]);
+  });
+
+  it('drops excluded tables, blocks and the references inside excluded blocks from the base', () => {
+    const pages: SchemaEntity = {
+      id: 'collection:pages',
+      kind: 'collection',
+      slug: 'pages',
+      label: 'pages',
+      singular: 'pages',
+      fields: [
+        { name: 'layout', type: 'blocks', blocks: ['hero', 'form'] },
+        { name: 'author', type: 'relationship', relationTo: ['users', 'posts'] },
+      ],
+    };
+    const relation = (path: string, to: string) => ({
+      from: 'collection:pages',
+      field: path.split(/[.[]/)[0],
+      path,
+      to,
+      kind: 'relationship' as const,
+      many: true,
+      polymorphic: false,
+      unique: false,
+    });
+    const base: Schema = {
+      entities: [pages, { ...pages, id: 'collection:posts', slug: 'posts', fields: [] }],
+      relations: [
+        relation('layout[hero].media', 'collection:pages'),
+        relation('layout[form].page', 'collection:pages'),
+        relation('author', 'collection:posts'),
+      ],
+    };
+    const filtered = excludeFromSchema(base, { exclude: ['posts', 'block:form'] });
+    expect(filtered.entities.map((e) => e.id)).toEqual(['collection:pages']);
+    // As buildSchema writes them: the blocks list loses the excluded block; relationTo keeps
+    // every slug, for the pages to filter by what the viewer can read
+    expect(filtered.entities[0].fields).toEqual([
+      { name: 'layout', type: 'blocks', blocks: ['hero'] },
+      { name: 'author', type: 'relationship', relationTo: ['users', 'posts'] },
+    ]);
+    expect(filtered.relations.map((r) => r.path)).toEqual(['layout[hero].media']);
+  });
+});
+
+describe('a reference that changes inside its row', () => {
+  it('marks the row and its table changed when only the reference moved', () => {
+    const pages = (to: string): Schema => ({
+      entities: [
+        {
+          id: 'collection:pages',
+          kind: 'collection',
+          slug: 'pages',
+          label: 'pages',
+          singular: 'pages',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'layout', type: 'blocks', blocks: ['mediaBlock'] },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: 'collection:pages',
+          field: 'layout',
+          path: 'layout[mediaBlock].media',
+          to,
+          kind: 'upload',
+          many: true,
+          polymorphic: false,
+          unique: false,
+        },
+      ],
+    });
+    const diff = diffSchema(pages('collection:media'), pages('collection:posts'));
+    expect(diff.entities[0].change).toBe('changed');
+    expect(diff.entities[0].fields.map((f) => f.change ?? null)).toEqual([null, 'changed']);
+    expect(diff.relations.map((r) => `${r.to}:${r.change}`)).toEqual([
+      'collection:posts:added',
+      'collection:media:deleted',
+    ]);
   });
 });

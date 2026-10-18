@@ -172,6 +172,8 @@ It needs git and the base branch, so it works in `next dev`, not in production, 
 hidden. Without git or the branch, or before the base branch has the files (the PR that turns the
 option on), the toggle is disabled and says why. Deleted collections and globals are shown to
 everyone who can open the pages: they hold no documents, and the committed files name them anyway.
+The base branch's files are read under the running config's `exclude`, so excluding something
+doesn't make it deleted.
 Changes to a block's fields that aren't links don't mark it changed yet.
 
 ## 📄 The lineage file

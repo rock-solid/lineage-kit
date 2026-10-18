@@ -6,7 +6,10 @@ The Payload plugin: the Lineage and Data model pages in the admin. Users' docs: 
   `src/plugin.ts` registers the pages, the nav link and the optional JSON file.
 - "Changed since main": `src/snapshot.ts` writes `graph.json` and `schema.json` and reads the base
   branch's copies with git (at the merge base); `src/diff.ts` marks what was added, changed or
-  deleted, keeping deleted items in the result. The pages diff first, then filter for the viewer.
+  deleted, keeping deleted items in the result; `src/compare.ts` is what the pages call. The base
+  goes through the running `exclude` (`src/exclude.ts`, shared with the builders) before the diff,
+  and the pages filter for the viewer after it: deleted items skip the read check, so anything
+  that still exists must never come back as deleted.
 - `src/rsc.tsx` holds the server components (the two pages, the nav link); `src/client.ts` the
   client ones, which tsup prefixes with `'use client'`. `rsc.tsx` imports `./client.js`, kept
   external in the build, so the boundary survives bundling. Keep that import path as is.

@@ -1,3 +1,4 @@
+import { excluder } from './exclude';
 import type {
   ContentEdge,
   ContentGraph,
@@ -27,18 +28,12 @@ export type PayloadConfigLike = {
   blocks?: BlockLike[];
 };
 
-// Payload adds these collections to every sanitized config; it adds no globals or blocks
-const INTERNAL_COLLECTION = /^payload-/;
-
 /** Builds the graph of a Payload config's collections, globals and blocks, and the fields that link them. */
 export function buildContentGraph(
   config: PayloadConfigLike,
-  { exclude = [] }: ContentGraphOptions = {},
+  options: ContentGraphOptions = {},
 ): ContentGraph {
-  const excluded = (kind: ContentKind, slug: string) =>
-    (kind === 'collection' && INTERNAL_COLLECTION.test(slug)) ||
-    exclude.includes(slug) ||
-    exclude.includes(`${kind}:${slug}`);
+  const excluded = excluder(options);
   const collections = (config.collections ?? []).filter((c) => !excluded('collection', c.slug));
   const globals = (config.globals ?? []).filter((g) => !excluded('global', g.slug));
   const sharedBlocks = new Map((config.blocks ?? []).map((b) => [b.slug, b]));

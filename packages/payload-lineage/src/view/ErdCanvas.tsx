@@ -552,7 +552,12 @@ const FieldChanges: React.FC<{ fields: readonly DiffedField[] }> = ({ fields }) 
               <ChangeBadge change={f.change} />
             </span>
             <span className="rs-lineage__via">
-              {f.before ? `${summary(f.before)} → ${summary(f)}` : summary(f)}
+              {f.before
+                ? `${summary(f.before)} → ${summary(f)}`
+                : // Changed with the same settings: what it references changed (see References)
+                  f.change === 'changed'
+                  ? `${summary(f)}; references changed`
+                  : summary(f)}
             </span>
           </li>
         ))}

@@ -162,15 +162,21 @@ export function schemaForViewer(
   const ids = new Set(readable.map((e) => e.id));
   const entities = readable.map((entity) => ({
     ...entity,
-    fields: entity.fields.map((field) => {
-      if (!field.relationTo) return field;
-      const { relationTo, ...rest } = field;
-      const visible = relationTo.filter((slug) => ids.has(`collection:${slug}`));
-      return visible.length ? { ...rest, relationTo: visible } : rest;
-    }),
+    fields: entity.fields.map(({ before, ...field }) => ({
+      ...readableTargets(field, ids),
+      // What a changed field was can name a collection the viewer can't read too
+      ...(before && { before: readableTargets(before, ids) }),
+    })),
   }));
   return {
     entities,
     relations: schema.relations.filter((r) => ids.has(r.from) && ids.has(r.to)),
   };
+}
+
+function readableTargets<F extends SchemaField>(field: F, ids: ReadonlySet<string>): F {
+  if (!field.relationTo) return field;
+  const { relationTo, ...rest } = field;
+  const visible = relationTo.filter((slug) => ids.has(`collection:${slug}`));
+  return (visible.length ? { ...rest, relationTo: visible } : rest) as F;
 }

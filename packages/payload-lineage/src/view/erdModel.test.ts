@@ -261,3 +261,50 @@ describe('changes', () => {
     expect([...shown].sort()).toEqual(['collection:media', 'collection:pages']);
   });
 });
+
+describe('schemaForViewer with changes', () => {
+  it('drops unreadable collections from what a changed field was, too', () => {
+    const schema = schemaForViewer(
+      {
+        entities: [
+          {
+            id: 'collection:pages',
+            kind: 'collection',
+            slug: 'pages',
+            label: 'pages',
+            singular: 'pages',
+            fields: [
+              {
+                name: 'owner',
+                type: 'relationship',
+                relationTo: ['users'],
+                change: 'changed',
+                before: { name: 'owner', type: 'relationship', relationTo: ['secrets', 'users'] },
+              },
+            ],
+          },
+          {
+            id: 'collection:users',
+            kind: 'collection',
+            slug: 'users',
+            label: 'users',
+            singular: 'users',
+            fields: [],
+          },
+          {
+            id: 'collection:secrets',
+            kind: 'collection',
+            slug: 'secrets',
+            label: 'secrets',
+            singular: 'secrets',
+            fields: [],
+          },
+        ],
+        relations: [],
+      },
+      (e) => e.slug !== 'secrets',
+    );
+    expect(JSON.stringify(schema)).not.toContain('secrets');
+    expect(schema.entities[0].fields[0].before?.relationTo).toEqual(['users']);
+  });
+});

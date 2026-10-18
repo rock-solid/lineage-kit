@@ -2,7 +2,7 @@
 import { DefaultTemplate } from '@payloadcms/next/templates';
 import { Gutter } from '@payloadcms/ui';
 import { redirect } from 'next/navigation';
-import type { AdminViewServerProps, Payload, SanitizedPermissions, ServerProps } from 'payload';
+import type { AdminViewServerProps, SanitizedPermissions, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import React from 'react';
 
@@ -10,10 +10,9 @@ import React from 'react';
 import { ErdCanvas, LineageCanvas, LineageNavLinkClient } from './client.js';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 import { canOpen, lineageConfig } from './access';
-import { diffGraph, diffSchema, type ChangesStatus } from './diff';
+import { compare } from './compare';
+import { diffGraph, diffSchema, excludeFromGraph, excludeFromSchema } from './diff';
 import { buildSchema } from './schema';
-import { readBaseSnapshot, writeSnapshot, type SnapshotKind } from './snapshot';
-import type { LineageCustomConfig } from './types';
 import { schemaForViewer } from './view/erdModel';
 import { adminPath, forViewer } from './view/model';
 
@@ -32,9 +31,9 @@ const TABS = [
 export async function LineageView(props: LineageViewProps) {
   const { payload, permissions, lineage } = await authorize(props, '/lineage');
   const current = buildContentGraph(payload.config as PayloadConfigLike, lineage.graphOptions);
-  const { changes, base } = await compare(payload, lineage, 'graph', current);
+  const { changes, base } = await compare(payload, lineage, 'graph');
   const graph = forViewer(
-    base ? diffGraph(base, current) : current,
+    base ? diffGraph(excludeFromGraph(base, lineage.graphOptions), current) : current,
     (node) => node.change === 'deleted' || canRead(permissions, node),
   );
   return (
@@ -63,9 +62,9 @@ export async function LineageView(props: LineageViewProps) {
 export async function SchemaView(props: LineageViewProps) {
   const { payload, permissions, lineage } = await authorize(props, '/lineage/schema');
   const current = buildSchema(payload.config as PayloadConfigLike, lineage.graphOptions);
-  const { changes, base } = await compare(payload, lineage, 'schema', current);
+  const { changes, base } = await compare(payload, lineage, 'schema');
   const schema = schemaForViewer(
-    base ? diffSchema(base, current) : current,
+    base ? diffSchema(excludeFromSchema(base, lineage.graphOptions), current) : current,
     (entity) => entity.change === 'deleted' || canRead(permissions, entity),
   );
   return (
@@ -114,26 +113,6 @@ async function authorize({ initPageResult }: AdminViewServerProps, path: `/${str
     redirect(`${to}?redirect=${encodeURIComponent(here)}`);
   }
   return { payload, permissions, lineage: lineageConfig(payload) };
-}
-
-/**
- * The base branch's snapshot to compare with, if the plugin's `snapshot` is on (it's off in
- * production). Also brings the working copy's snapshot up to date: Payload's hot reload in
- * `next dev` doesn't run `onInit` again, so a config edit would otherwise wait for a restart.
- */
-async function compare<K extends SnapshotKind>(
-  payload: Payload,
-  { snapshot }: LineageCustomConfig,
-  kind: K,
-  current: Parameters<typeof writeSnapshot<K>>[2],
-): Promise<{ changes?: ChangesStatus; base?: typeof current }> {
-  if (!snapshot) return {};
-  await writeSnapshot(snapshot.dir, kind, current).catch((err: unknown) =>
-    payload.logger.warn({ err, msg: `Lineage: couldn't write the snapshot in ${snapshot.dir}` }),
-  );
-  const found = await readBaseSnapshot(snapshot, kind);
-  if (found.state !== 'ready') return { changes: found };
-  return { changes: { state: 'ready', base: found.base }, base: found.value };
 }
 
 function canRead(

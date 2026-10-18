@@ -13,7 +13,8 @@ const run = promisify(execFile);
 
 export const SNAPSHOT_FILES = { graph: 'graph.json', schema: 'schema.json' } as const;
 export type SnapshotKind = keyof typeof SNAPSHOT_FILES;
-type Contents = { graph: ContentGraph; schema: Schema };
+export type SnapshotContents = { graph: ContentGraph; schema: Schema };
+type Contents = SnapshotContents;
 
 export type ResolvedSnapshot = { dir: string; baseBranch: string };
 
