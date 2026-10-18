@@ -63,6 +63,8 @@ jobs:
       - name: Version packages
         uses: changesets/action/version@v2
         with:
+          # `changeset version`, then scripts/format-changelog.mjs to group the release notes by type
+          script: pnpm version-packages
           # A PR opened with this token doesn't trigger CI; close and reopen it to run the checks
           pr-title: 'chore(release): version packages'
           commit-message: 'chore(release): version packages'
