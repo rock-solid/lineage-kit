@@ -6,5 +6,6 @@ export {
   type SchemaField,
   type SchemaRelation,
 } from './schema';
+export { contentGraphToMermaid, schemaToMermaid } from './mermaid';
 export { lineagePlugin } from './plugin';
 export type * from './types';

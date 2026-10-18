@@ -15,8 +15,14 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { adjacency, walk, type LayoutOptions } from '@rocksoliddigital/lineage-core';
-import { useLayout } from '@rocksoliddigital/lineage-core/react';
+import {
+  adjacency,
+  MERMAID_READABLE_NODES,
+  toMermaidFlowchart,
+  walk,
+  type LayoutOptions,
+} from '@rocksoliddigital/lineage-core';
+import { useCopy, useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';
@@ -79,6 +85,7 @@ const LineageView: React.FC<LineageGraphProps> = ({
   onDepthChange,
 }) => {
   const { fitView } = useReactFlow();
+  const { status: copyStatus, copy } = useCopy();
   const [hiddenLayers, setHiddenLayers] = useState(
     () => new Set(graph.layers.filter((l) => l.hidden).map((l) => l.id)),
   );
@@ -399,6 +406,34 @@ const LineageView: React.FC<LineageGraphProps> = ({
               {visible.ids.size} files, {visible.edges.length} imports, {withoutStory} without a
               story
             </p>
+            <button
+              className={styles.button}
+              type="button"
+              aria-live="polite"
+              title={
+                visible.ids.size > MERMAID_READABLE_NODES
+                  ? `${visible.ids.size} files is a lot for one Mermaid diagram; focus or hide layers first for one that reads well`
+                  : 'Copy what the graph shows as a Mermaid diagram, for a PR, doc or ticket'
+              }
+              onClick={() =>
+                copy(
+                  toMermaidFlowchart({
+                    nodes: [...visible.ids].map((id) => {
+                      const node = nodesById.get(id)!;
+                      return { id, label: node.label, group: node.layer };
+                    }),
+                    edges: visible.edges,
+                    groups: graph.layers,
+                  }),
+                )
+              }
+            >
+              {copyStatus === 'copied'
+                ? 'Copied'
+                : copyStatus === 'failed'
+                  ? "Couldn't copy"
+                  : 'Copy as Mermaid'}
+            </button>
 
             <div className={styles.focus}>
               <label className={styles.layer}>

@@ -18,7 +18,9 @@ import {
 import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import { schemaToMermaid } from '../mermaid';
 import type { Schema, SchemaEntity, SchemaField } from '../schema';
+import { CopyMermaid } from './CopyMermaid';
 import {
   describeCardinality,
   erdEdges,
@@ -252,6 +254,18 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
               <span className="rs-lineage__count">
                 {entities.length} tables, {fieldCount} fields, {lines.length} references
               </span>
+              <CopyMermaid
+                // Every field, or the key fields with "Key fields only", not the cut-down tables
+                text={() =>
+                  schemaToMermaid({
+                    entities: tables.map((t) =>
+                      keysOnly ? { ...t.entity, fields: t.rows } : t.entity,
+                    ),
+                    relations,
+                  })
+                }
+                size={entities.length}
+              />
             </div>
           </Panel>
         </ReactFlow>

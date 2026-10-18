@@ -203,6 +203,24 @@ html[data-theme='dark'] .rs-lineage {
 .rs-lineage__toggle input {
   margin: 0;
 }
+.rs-lineage__copy {
+  appearance: none;
+  margin: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--theme-elevation-250);
+  border-radius: var(--style-radius-s, 4px);
+  background: var(--theme-elevation-50);
+  color: var(--theme-text);
+  font: inherit;
+  cursor: pointer;
+}
+.rs-lineage__copy:hover {
+  background: var(--theme-elevation-100);
+}
+.rs-lineage__copy:focus-visible {
+  outline: 2px solid var(--theme-elevation-900);
+  outline-offset: 2px;
+}
 .rs-lineage__count {
   color: var(--theme-elevation-600);
   font-variant-numeric: tabular-nums;
