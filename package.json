@@ -18,10 +18,10 @@
     "test": "pnpm -r test",
     "check": "pnpm format:check && pnpm build && pnpm lint --max-warnings 0 && pnpm typecheck && pnpm test && pnpm --filter example build-storybook --quiet",
     "prepare": "if git rev-parse --git-dir >/dev/null 2>&1 && command -v lefthook >/dev/null 2>&1; then lefthook install; fi",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/format-changelog.mjs"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",

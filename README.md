@@ -120,7 +120,13 @@ Once changesets reach `main`, the Release workflow opens a **Version Packages** 
 to date: it bumps the versions and writes each package's `CHANGELOG.md`. Merging it publishes the
 new versions to npmjs.com with provenance, tags them (`@rocksoliddigital/payload-lineage@<version>`) and
 creates their GitHub Releases. GitHub doesn't let a PR the workflow opens start other workflows, so
-close and reopen the Version Packages PR to run its checks. For a prerelease, see Changesets'
+close and reopen the Version Packages PR to run its checks.
+
+Release notes group changesets under `🚀 Features`, `🐛 Bug Fixes` and `⚠️ Breaking Changes` (minor,
+patch and major), one line each with the PR's scope, PR and commit, then `🤝 Contributors`.
+`.changeset/changelog.mjs` writes the lines and `scripts/format-changelog.mjs` the sections, both
+run by `pnpm version-packages` (`changeset version`, then the formatter). To preview, run it with
+`GITHUB_TOKEN=$(gh auth token)` and discard the result. For a prerelease, see Changesets'
 [prerelease guide](https://github.com/changesets/changesets/blob/main/docs/prereleases.md).
 
 **Setting up publishing, once:**
