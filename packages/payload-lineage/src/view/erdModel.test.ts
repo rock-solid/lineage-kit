@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { SchemaEntity, SchemaRelation } from '../schema';
 import {
+  changedTables,
   describeCardinality,
   erdEdges,
   ROW_LIMIT,
@@ -211,5 +212,52 @@ describe('describeCardinality', () => {
     expect(describeCardinality('one-to-one', hotels, media)).toBe(
       'Each Hotel references one Media, and a Media can be referenced by only one Hotel.',
     );
+  });
+});
+
+describe('changes', () => {
+  const table = (id: string): SchemaEntity => ({
+    id,
+    kind: 'collection',
+    slug: id.split(':')[1],
+    label: id,
+    singular: id,
+    fields: [{ name: 'id', type: 'id', required: true }],
+  });
+
+  it('marks a line by its relations: all added or deleted, or changed when they differ', () => {
+    const [mixed] = erdEdges([
+      { ...rel('collection:pages', 'layout', 'collection:media'), change: 'added' },
+      { ...rel('collection:pages', 'layout', 'collection:media'), path: 'layout[b].media' },
+    ]);
+    expect(mixed.change).toBe('changed');
+    const [deleted] = erdEdges([
+      { ...rel('collection:pages', 'hero', 'collection:media'), change: 'deleted' },
+    ]);
+    expect(deleted.change).toBe('deleted');
+  });
+
+  it('keeps changed rows in a cut-down table', () => {
+    const fields = Array.from({ length: ROW_LIMIT + 5 }, (_, i) => ({
+      name: `f${i}`,
+      type: 'text',
+      ...(i === ROW_LIMIT + 4 && { change: 'added' as const }),
+    }));
+    const entity = { ...table('collection:pages'), fields };
+    const { rows } = visibleRows(entity, [], { keysOnly: false, expanded: false });
+    expect(rows).toHaveLength(ROW_LIMIT);
+    expect(rows.at(-1)?.name).toBe(`f${ROW_LIMIT + 4}`);
+  });
+
+  it('shows the tables that changed and the ones that reference them', () => {
+    const shown = changedTables({
+      entities: [
+        { ...table('collection:media'), change: 'changed' },
+        table('collection:pages'),
+        table('collection:users'),
+      ],
+      relations: [rel('collection:pages', 'hero', 'collection:media')],
+    });
+    expect([...shown].sort()).toEqual(['collection:media', 'collection:pages']);
   });
 });

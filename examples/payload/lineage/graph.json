@@ -1,0 +1,156 @@
+{
+  "nodes": [
+    {
+      "id": "collection:users",
+      "kind": "collection",
+      "slug": "users",
+      "label": "Users"
+    },
+    {
+      "id": "collection:media",
+      "kind": "collection",
+      "slug": "media",
+      "label": "Media"
+    },
+    {
+      "id": "collection:pages",
+      "kind": "collection",
+      "slug": "pages",
+      "label": "Pages"
+    },
+    {
+      "id": "collection:posts",
+      "kind": "collection",
+      "slug": "posts",
+      "label": "Posts"
+    },
+    {
+      "id": "collection:categories",
+      "kind": "collection",
+      "slug": "categories",
+      "label": "Categories"
+    },
+    {
+      "id": "global:header",
+      "kind": "global",
+      "slug": "header",
+      "label": "Header"
+    },
+    {
+      "id": "block:callToAction",
+      "kind": "block",
+      "slug": "callToAction",
+      "label": "Call to action"
+    },
+    {
+      "id": "block:mediaBlock",
+      "kind": "block",
+      "slug": "mediaBlock",
+      "label": "Media block"
+    },
+    {
+      "id": "block:postList",
+      "kind": "block",
+      "slug": "postList",
+      "label": "Post list"
+    }
+  ],
+  "edges": [
+    {
+      "source": "collection:media",
+      "target": "collection:pages",
+      "kind": "upload",
+      "fields": [
+        "hero.image"
+      ]
+    },
+    {
+      "source": "collection:pages",
+      "target": "block:callToAction",
+      "kind": "relationship",
+      "fields": [
+        "page"
+      ]
+    },
+    {
+      "source": "block:callToAction",
+      "target": "collection:pages",
+      "kind": "blocks",
+      "fields": [
+        "layout"
+      ]
+    },
+    {
+      "source": "collection:media",
+      "target": "block:mediaBlock",
+      "kind": "upload",
+      "fields": [
+        "media"
+      ]
+    },
+    {
+      "source": "block:mediaBlock",
+      "target": "collection:pages",
+      "kind": "blocks",
+      "fields": [
+        "layout"
+      ]
+    },
+    {
+      "source": "collection:posts",
+      "target": "block:postList",
+      "kind": "relationship",
+      "fields": [
+        "posts"
+      ]
+    },
+    {
+      "source": "block:postList",
+      "target": "collection:pages",
+      "kind": "blocks",
+      "fields": [
+        "layout"
+      ]
+    },
+    {
+      "source": "collection:pages",
+      "target": "collection:pages",
+      "kind": "relationship",
+      "fields": [
+        "parent"
+      ]
+    },
+    {
+      "source": "collection:users",
+      "target": "collection:posts",
+      "kind": "relationship",
+      "fields": [
+        "author"
+      ]
+    },
+    {
+      "source": "collection:media",
+      "target": "collection:posts",
+      "kind": "upload",
+      "fields": [
+        "cover"
+      ]
+    },
+    {
+      "source": "collection:categories",
+      "target": "collection:posts",
+      "kind": "relationship",
+      "fields": [
+        "categories"
+      ]
+    },
+    {
+      "source": "collection:pages",
+      "target": "global:header",
+      "kind": "relationship",
+      "fields": [
+        "nav.page"
+      ]
+    }
+  ]
+}

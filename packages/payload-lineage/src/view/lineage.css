@@ -10,6 +10,10 @@
   --rs-global-soft: #efeafb;
   --rs-edge: var(--theme-elevation-300);
   --rs-edge-active: var(--theme-elevation-900);
+  /* Changes since the base branch, as in a diff */
+  --rs-added: #1a7f37;
+  --rs-changed: #0969da;
+  --rs-deleted: #cf222e;
 }
 html[data-theme='dark'] .rs-lineage-page,
 html[data-theme='dark'] .rs-lineage {
@@ -19,6 +23,9 @@ html[data-theme='dark'] .rs-lineage {
   --rs-block-soft: #35260f;
   --rs-global: #a88cf0;
   --rs-global-soft: #261e3d;
+  --rs-added: #3fb950;
+  --rs-changed: #58a6ff;
+  --rs-deleted: #f85149;
 }
 
 .rs-lineage-page {
@@ -535,4 +542,86 @@ html[data-theme='dark'] .rs-lineage {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
   color: var(--theme-elevation-700);
+}
+
+/* Changes since the base branch: a badge on what was added or changed; what was deleted stays,
+   faded, dashed and struck through, with the links it had */
+.rs-change-badge {
+  flex: none;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-decoration: none;
+  vertical-align: middle;
+  color: var(--theme-elevation-0);
+}
+.rs-change-badge--added {
+  background: var(--rs-added);
+}
+.rs-change-badge--changed {
+  background: var(--rs-changed);
+}
+.rs-change-badge--deleted {
+  background: var(--rs-deleted);
+}
+/* An outline, so the hover and selection ring (a box-shadow) still shows inside it */
+.rs-change--added,
+.rs-change--changed {
+  outline: 2px solid var(--change);
+  outline-offset: 3px;
+}
+.rs-change--added {
+  --change: var(--rs-added);
+}
+.rs-change--changed {
+  --change: var(--rs-changed);
+}
+.rs-change--deleted {
+  border-style: dashed;
+  opacity: 0.55;
+}
+.rs-change--deleted .rs-lineage__label,
+.rs-change--deleted .rs-erd__title {
+  text-decoration: line-through;
+}
+.rs-change--deleted.rs-lineage__node--dimmed,
+.rs-change--deleted.rs-erd__table--dimmed {
+  opacity: 0.15;
+}
+.rs-lineage .rs-lineage__edge--added .react-flow__edge-path {
+  stroke: var(--rs-added);
+}
+.rs-lineage .rs-lineage__edge--changed .react-flow__edge-path {
+  stroke: var(--rs-changed);
+}
+.rs-lineage .rs-lineage__edge--deleted .react-flow__edge-path {
+  stroke: var(--rs-deleted);
+  stroke-dasharray: 2 4;
+  opacity: 0.6;
+}
+.rs-erd__row--added {
+  box-shadow: inset 3px 0 var(--rs-added);
+}
+.rs-erd__row--changed {
+  box-shadow: inset 3px 0 var(--rs-changed);
+}
+.rs-erd__row--deleted {
+  box-shadow: inset 3px 0 var(--rs-deleted);
+  color: var(--theme-elevation-500);
+  text-decoration: line-through;
+}
+.rs-erd__changes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-erd__changes li {
+  display: grid;
+  gap: 2px;
 }

@@ -2,6 +2,6 @@
 next-env.d.ts
 *.tsbuildinfo
 example.db*
-lineage/
+lineage/content.json
 media/
 .env

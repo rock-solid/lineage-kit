@@ -2,7 +2,7 @@
 import { DefaultTemplate } from '@payloadcms/next/templates';
 import { Gutter } from '@payloadcms/ui';
 import { redirect } from 'next/navigation';
-import type { AdminViewServerProps, SanitizedPermissions, ServerProps } from 'payload';
+import type { AdminViewServerProps, Payload, SanitizedPermissions, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import React from 'react';
 
@@ -10,7 +10,10 @@ import React from 'react';
 import { ErdCanvas, LineageCanvas, LineageNavLinkClient } from './client.js';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 import { canOpen, lineageConfig } from './access';
+import { diffGraph, diffSchema, type ChangesStatus } from './diff';
 import { buildSchema } from './schema';
+import { readBaseSnapshot, writeSnapshot, type SnapshotKind } from './snapshot';
+import type { LineageCustomConfig } from './types';
 import { schemaForViewer } from './view/erdModel';
 import { adminPath, forViewer } from './view/model';
 
@@ -27,10 +30,12 @@ const TABS = [
  * pass the plugin's `access`, showing only the collections and globals they can read.
  */
 export async function LineageView(props: LineageViewProps) {
-  const { payload, permissions, graphOptions } = await authorize(props, '/lineage');
+  const { payload, permissions, lineage } = await authorize(props, '/lineage');
+  const current = buildContentGraph(payload.config as PayloadConfigLike, lineage.graphOptions);
+  const { changes, base } = await compare(payload, lineage, 'graph', current);
   const graph = forViewer(
-    buildContentGraph(payload.config as PayloadConfigLike, graphOptions),
-    (node) => canRead(permissions, node),
+    base ? diffGraph(base, current) : current,
+    (node) => node.change === 'deleted' || canRead(permissions, node),
   );
   return (
     <Page
@@ -39,7 +44,14 @@ export async function LineageView(props: LineageViewProps) {
       title="Content lineage"
       intro="Collections, globals and blocks, and the fields that link them. Read left to right: what each is built from, then where it is used."
     >
-      <LineageCanvas graph={graph} adminURLs={adminURLs(props, graph.nodes)} />
+      <LineageCanvas
+        graph={graph}
+        changes={changes}
+        adminURLs={adminURLs(
+          props,
+          graph.nodes.filter((n) => n.change !== 'deleted'),
+        )}
+      />
     </Page>
   );
 }
@@ -49,10 +61,12 @@ export async function LineageView(props: LineageViewProps) {
  * global with its fields, and a line per reference. Same access as the lineage page.
  */
 export async function SchemaView(props: LineageViewProps) {
-  const { payload, permissions, graphOptions } = await authorize(props, '/lineage/schema');
+  const { payload, permissions, lineage } = await authorize(props, '/lineage/schema');
+  const current = buildSchema(payload.config as PayloadConfigLike, lineage.graphOptions);
+  const { changes, base } = await compare(payload, lineage, 'schema', current);
   const schema = schemaForViewer(
-    buildSchema(payload.config as PayloadConfigLike, graphOptions),
-    (entity) => canRead(permissions, entity),
+    base ? diffSchema(base, current) : current,
+    (entity) => entity.change === 'deleted' || canRead(permissions, entity),
   );
   return (
     <Page
@@ -61,7 +75,14 @@ export async function SchemaView(props: LineageViewProps) {
       title="Data model"
       intro="Each collection and global with its fields, and the fields that reference other collections. Each line says how many of one the other can reference: many-to-one, many-to-many or one-to-one."
     >
-      <ErdCanvas schema={schema} adminURLs={adminURLs(props, schema.entities)} />
+      <ErdCanvas
+        schema={schema}
+        changes={changes}
+        adminURLs={adminURLs(
+          props,
+          schema.entities.filter((e) => e.change !== 'deleted'),
+        )}
+      />
     </Page>
   );
 }
@@ -92,7 +113,27 @@ async function authorize({ initPageResult }: AdminViewServerProps, path: `/${str
     });
     redirect(`${to}?redirect=${encodeURIComponent(here)}`);
   }
-  return { payload, permissions, graphOptions: lineageConfig(payload).graphOptions };
+  return { payload, permissions, lineage: lineageConfig(payload) };
+}
+
+/**
+ * The base branch's snapshot to compare with, if the plugin's `snapshot` is on (it's off in
+ * production). Also brings the working copy's snapshot up to date: Payload's hot reload in
+ * `next dev` doesn't run `onInit` again, so a config edit would otherwise wait for a restart.
+ */
+async function compare<K extends SnapshotKind>(
+  payload: Payload,
+  { snapshot }: LineageCustomConfig,
+  kind: K,
+  current: Parameters<typeof writeSnapshot<K>>[2],
+): Promise<{ changes?: ChangesStatus; base?: typeof current }> {
+  if (!snapshot) return {};
+  await writeSnapshot(snapshot.dir, kind, current).catch((err: unknown) =>
+    payload.logger.warn({ err, msg: `Lineage: couldn't write the snapshot in ${snapshot.dir}` }),
+  );
+  const found = await readBaseSnapshot(snapshot, kind);
+  if (found.state !== 'ready') return { changes: found };
+  return { changes: { state: 'ready', base: found.base }, base: found.value };
 }
 
 function canRead(

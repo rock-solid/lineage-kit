@@ -22,5 +22,5 @@ export default buildConfig({
   // A file next to the app, so the example runs without a database server
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./example.db' } }),
   typescript: { autoGenerate: false },
-  plugins: [lineagePlugin({ outputFile: 'lineage/content.json' })],
+  plugins: [lineagePlugin({ outputFile: 'lineage/content.json', snapshot: true })],
 });
