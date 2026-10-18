@@ -1,24 +1,11 @@
 # 🗺️ Roadmap
 
-Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to: first
-for the repo as a whole, then for each package. For what each does today, see its README, e.g. the
-Storybook addon's [features](packages/storybook-addon-lineage#-features). It changes as we learn;
-open an issue to suggest or question anything here.
-
-## 🧭 Status
-
-| Package                                     | Where                                                                                |                              |
-| ------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------- |
-| `@rocksoliddigital/storybook-addon-lineage` | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | On trial in a client project |
-| `@rocksoliddigital/payload-lineage`         | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)         | Tried on a client project    |
+What's next, what doesn't work yet, and ideas we haven't committed to: first for the repo as a
+whole, then for each package. For what each does today, see its README, e.g. the Storybook addon's
+[features](packages/storybook-addon-lineage#-features). It changes as we learn; open an issue to
+suggest or question anything here.
 
 ## 🌐 Whole repo
-
-### 🚀 Now
-
-- **Trusted publishing on npmjs.com.** The packages are on npm, and each has the Release workflow
-  as its trusted publisher, pending validation: the next release through the workflow (merging a
-  Version Packages PR) validates it. Until then, a publish needs a maintainer's passkey.
 
 ### ⏭️ Next
 
