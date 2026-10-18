@@ -17,19 +17,40 @@ The content side of lineage, from a Payload config, as two pages in the admin:
 | `one-to-one`   | A `unique` reference, or a global's single one (a global is one document) |
 | `one-to-many`  | A global's list of references                                             |
 
-Both are built from the running config on each visit (well under a millisecond), so they are never
-out of date. A "Lineage" link in the nav opens them. To try them, run the
+A "Lineage" link in the nav opens them. To try them, run the
 [example](https://github.com/rock-solid/lineage-kit/tree/main/examples/payload).
 
-**Copy Mermaid**, on both pages, copies what the page shows, with its filters, as a Mermaid diagram:
-the lineage as a flowchart, the data model as an `erDiagram` in crow's-foot notation. Paste it into
-a PR, a doc or a ticket, and GitHub, GitLab and most docs tools draw it.
+Works with Payload 3 on Next.js 15 or 16, with React 19. Early days: what's next is on the
+[roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin).
 
-Works with Payload 3 on Next.js 15 or 16, with React 19.
+## ✨ Features
 
-> **Status:** early. Both pages come from the config only. Which pages use which blocks (from the
-> documents), shared field configs (by import scan) and merging into the Storybook page are next;
-> see the [roadmap](https://github.com/rock-solid/lineage-kit/blob/main/ROADMAP.md#-payload-plugin).
+**👀 Explore**
+
+- **Lineage** and **Data model** pages in the admin, with a link in the nav, added by the plugin.
+- **Kinds** colour the nodes: collections, blocks and globals. Switch any kind on or off, and
+  **Hide unconnected** collections, like a `users` that nothing points at.
+- **Hover** a node to trace its whole lineage: everything upstream and downstream lights up, the rest
+  dims. On the data model, hover a table for what it references and what references it.
+- **Click** a node or table for the fields behind each link, with its cardinality as a sentence
+  ("Each Post references many Categories"), and **Open in the admin**.
+- **Key fields only** cuts the tables down to their ids and references; long tables show ten rows
+  and a "+N more".
+- **Copy Mermaid** copies what the page shows, with its filters, as a Mermaid diagram: the lineage
+  as a flowchart, the data model as an `erDiagram` in crow's-foot notation. Paste it into a PR, a
+  doc or a ticket, and GitHub, GitLab and most docs tools draw it.
+
+**🔒 Access**
+
+- For users who can use the admin and pass the plugin's `access`, showing only the collections and
+  globals they can read. Everything is checked and built on the server. See [Access](#-access).
+
+**🧩 Setup**
+
+- One line in `payload.config.ts`. Options for excluded slugs, access and the JSON file.
+- Built from the running config on each visit (well under a millisecond), so the pages are never out
+  of date. `buildContentGraph` and `buildSchema` give the same data to scripts.
+- Follows the admin's light and dark themes.
 
 ## 📥 Install
 

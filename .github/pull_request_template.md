@@ -40,6 +40,7 @@ without asking you.
 - [ ] Lint, type checks and tests pass
 - [ ] New or changed behaviour has a test: <!-- name it, or say why not -->
 - [ ] A changeset for each package whose behaviour changes (`pnpm changeset`): <!-- or say why none is needed -->
+- [ ] ROADMAP.md updated: what shipped or got fixed is removed, entries this changes are updated: <!-- or say why none is needed -->
 
 **Not covered**
 <!-- What this plan doesn't check, and why. "Nothing" is a valid answer. -->

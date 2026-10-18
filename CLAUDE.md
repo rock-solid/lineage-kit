@@ -32,3 +32,6 @@ Each package has its own `CLAUDE.md` with what's particular to it.
 - `examples/payload/AGENTS.md` and `CLAUDE.md` are written by `next dev`; leave them as generated.
 - Generated files stay out of lint and format: `.next/`, the Payload `importMap.js`, `dist/`.
 - Releases: see the README's Releasing section.
+- Keep [ROADMAP.md](ROADMAP.md) current in the same PR as the work: remove what shipped (the
+  package README describes it now), remove known issues it fixes, and update entries it changes or
+  makes stale, including mentions elsewhere in the file (e.g. a "see Next" pointer).

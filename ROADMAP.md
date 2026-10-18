@@ -1,24 +1,11 @@
 # 🗺️ Roadmap
 
-Where lineage-kit is, what's next, what doesn't work yet, and ideas we haven't committed to: first
-for the repo as a whole, then for each package. For what each does today, see its README, e.g. the
-Storybook addon's [features](packages/storybook-addon-lineage#-features). It changes as we learn;
-open an issue to suggest or question anything here.
-
-## 🧭 Status
-
-| Package                                     | Where                                                                                |                              |
-| ------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------- |
-| `@rocksoliddigital/storybook-addon-lineage` | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | On trial in a client project |
-| `@rocksoliddigital/payload-lineage`         | [npmjs.com](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)         | Tried on a client project    |
+What's next, what doesn't work yet, and ideas we haven't committed to: first for the repo as a
+whole, then for each package. For what each does today, see its README, e.g. the Storybook addon's
+[features](packages/storybook-addon-lineage#-features). It changes as we learn; open an issue to
+suggest or question anything here.
 
 ## 🌐 Whole repo
-
-### 🚀 Now
-
-- **Trusted publishing on npmjs.com.** The packages are on npm, and each has the Release workflow
-  as its trusted publisher, pending validation: the next release through the workflow (merging a
-  Version Packages PR) validates it. Until then, a publish needs a maintainer's passkey.
 
 ### ⏭️ Next
 
@@ -133,18 +120,6 @@ globals, 22 blocks); `examples/payload` is a small one to develop against.
     fails when that file is out of date, for CI.
   - The same filters as the pages: `exclude`, and a focus with a depth to keep large graphs
     readable: `--focus collection:pages --depth 2`.
-- **Changed since main**, as the Storybook addon has, including what was deleted.
-  - The plugin also writes `lineage/schema.json`, and both files are committed. On a branch, the
-    pages read `main`'s copies (`git show origin/main:lineage/schema.json`) and compare them with the
-    running config.
-  - Lineage: added, changed and deleted nodes and links. Data model: tables added or deleted, and
-    fields added, removed or changed (type, required, what they reference).
-  - Deleted nodes and tables stay on the page, faded, dashed and struck through, with the links
-    they had, so it's clear what they connected.
-  - A "Changed since main" toggle that shows only the changes and what they affect, like dbt's
-    `state:modified+`.
-  - Needs git and the base branch, so it works in `next dev` and CI, not on a production server,
-    where the toggle is hidden. The first PR that commits the files has nothing to compare with.
 - **Links inside rich text.** A Lexical `LinkFeature` with `enabledCollections`, an
   `UploadFeature` or a `BlocksFeature` can reference collections and blocks from inside the editor;
   today those aren't edges. Reading them means going into Lexical's resolved feature config, which can
@@ -170,6 +145,9 @@ globals, 22 blocks); `examples/payload` is a small one to develop against.
 - **Links inside rich text are missing** from both pages (see Next).
 - **Form-builder's field blocks crowd the lineage graph** (`checkbox`, `email`, `text`, …) unless
   listed in `exclude`.
+- **A block's own fields don't mark it changed** in "Changed since main", only its links: the
+  snapshot files hold a block's links, not its fields. Collections and globals show every field
+  change on the Data model page.
 - **ERD sentences use the config's labels,** so an uncountable singular ("a Media") or a plural that
   isn't one ("many Team") reads oddly. Setting `labels` on the collection fixes it, in the admin too.
 
