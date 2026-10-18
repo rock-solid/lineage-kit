@@ -5,6 +5,11 @@
 // The commit-msg hook uses this file. CI checks PR titles against it too, with commitlint's default
 // ignores off (commitlint.pr-title.config.mjs); the hook keeps them for `fixup!` commits.
 const SUBJECT = /^(?:[A-Z][A-Z0-9]+-\d+ \| )?[a-z0-9].*$/;
+// Dependabot titles its PRs with a capital `Bump` and can't be told otherwise, so its subjects are
+// accepted too: `Bump actions/checkout from 7 to 8`, `Bump the actions group with 2 updates`,
+// `Bump the actions group across 1 directory with 2 updates`. Only the subject is let through: the
+// type, scope and length rules still apply.
+const DEPENDABOT = /^Bump (\S+ from \S+ to \S+|the \S+ group)( (in|across|with) .+)?$/;
 
 export default {
   extends: ['@commitlint/config-conventional'],
@@ -12,7 +17,7 @@ export default {
     {
       rules: {
         'subject-ticket-format': ({ subject }) => [
-          !subject || SUBJECT.test(subject),
+          !subject || SUBJECT.test(subject) || DEPENDABOT.test(subject),
           'subject must be "TICKET-123 | description" or "description", starting with a lowercase letter or digit',
         ],
       },
