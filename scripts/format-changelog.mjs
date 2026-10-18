@@ -9,6 +9,7 @@
 // and the authors .changeset/changelog.mjs left in hidden comments become a Contributors list.
 // An entry already in this form is left alone, so running it twice changes nothing.
 
+import { realpathSync } from 'node:fs';
 import { glob, readFile, writeFile } from 'node:fs/promises';
 
 const SECTIONS = {
@@ -43,7 +44,8 @@ export function formatChangelog(changelog) {
   return changelog.slice(0, start) + formatted + (next === -1 ? '' : '\n') + changelog.slice(end);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Real paths on both sides: a URL escapes spaces, and argv keeps symlinks such as /tmp
+if (process.argv[1] && import.meta.filename === realpathSync(process.argv[1])) {
   for await (const path of glob(['CHANGELOG.md', '{packages,apps}/*/CHANGELOG.md'])) {
     const changelog = await readFile(path, 'utf8');
     const formatted = formatChangelog(changelog);
