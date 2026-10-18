@@ -11,7 +11,7 @@ import { ErdCanvas, LineageCanvas, LineageNavLinkClient } from './client.js';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 import { canOpen, lineageConfig } from './access';
 import { compare } from './compare';
-import { diffGraph, diffSchema, excludeFromGraph, excludeFromSchema } from './diff';
+import { alignGraph, alignSchema, diffGraph, diffSchema } from './diff';
 import { buildSchema } from './schema';
 import { schemaForViewer } from './view/erdModel';
 import { adminPath, forViewer } from './view/model';
@@ -30,10 +30,14 @@ const TABS = [
  */
 export async function LineageView(props: LineageViewProps) {
   const { payload, permissions, lineage } = await authorize(props, '/lineage');
-  const current = buildContentGraph(payload.config as PayloadConfigLike, lineage.graphOptions);
+  const config = payload.config as PayloadConfigLike;
+  const current = buildContentGraph(config, lineage.graphOptions);
   const { changes, base } = await compare(payload, lineage, 'graph');
   const graph = forViewer(
-    base ? diffGraph(excludeFromGraph(base, lineage.graphOptions), current) : current,
+    base
+      ? // Against the config built with nothing excluded, so filtered isn't taken for deleted
+        diffGraph(alignGraph(base, buildContentGraph(config), current), current)
+      : current,
     (node) => node.change === 'deleted' || canRead(permissions, node),
   );
   return (
@@ -61,10 +65,17 @@ export async function LineageView(props: LineageViewProps) {
  */
 export async function SchemaView(props: LineageViewProps) {
   const { payload, permissions, lineage } = await authorize(props, '/lineage/schema');
-  const current = buildSchema(payload.config as PayloadConfigLike, lineage.graphOptions);
+  const config = payload.config as PayloadConfigLike;
+  const current = buildSchema(config, lineage.graphOptions);
   const { changes, base } = await compare(payload, lineage, 'schema');
   const schema = schemaForViewer(
-    base ? diffSchema(excludeFromSchema(base, lineage.graphOptions), current) : current,
+    base
+      ? // Against the config built with nothing excluded and hidden fields kept, as above
+        diffSchema(
+          alignSchema(base, buildSchema(config, {}, { includeHidden: true }), current),
+          current,
+        )
+      : current,
     (entity) => entity.change === 'deleted' || canRead(permissions, entity),
   );
   return (

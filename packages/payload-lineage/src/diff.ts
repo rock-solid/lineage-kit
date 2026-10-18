@@ -2,21 +2,22 @@
 // running config. Deleted nodes, links, tables, fields and references stay in the result, marked
 // as such, so the pages can show what they connected.
 
-import { excluder } from './exclude';
 import type { Schema, SchemaEntity, SchemaField, SchemaRelation } from './schema';
-import type { ContentEdge, ContentGraph, ContentGraphOptions, ContentNode } from './types';
+import type { ContentEdge, ContentGraph, ContentNode } from './types';
 
 export type Change = 'added' | 'changed' | 'deleted';
 export type WithChange<T> = T & { change?: Change };
 
 /**
  * Whether the pages can show what changed: `ready` to compare with `base`; `no-snapshot` when the
- * base branch has no snapshot yet; `no-base` without git or the branch. Left out when the plugin's
+ * base branch has no snapshot yet; `invalid` when its file isn't JSON; `no-base` without git or the
+ * branch. Left out when the plugin's
  * `snapshot` is off, or in production.
  */
 export type ChangesStatus =
   | { state: 'ready'; base: string }
   | { state: 'no-snapshot'; base: string }
+  | { state: 'invalid'; base: string }
   | { state: 'no-base'; branch: string };
 
 export type DiffedGraph = {
@@ -76,44 +77,59 @@ export function diffGraph(base: ContentGraph, current: ContentGraph): DiffedGrap
 }
 
 /**
- * The base branch's graph under the running config's `exclude`: what's excluded now isn't deleted,
- * and must not come back as deleted, past the access checks deleted items skip.
+ * The base branch's graph, aligned with what the running config filters out (`exclude`, and the
+ * blocks only an excluded collection or block reaches). `unfiltered` is the running config built
+ * with nothing excluded: whatever is in it still exists, so it's left out of the base rather than
+ * coming back as deleted, past the read checks deleted items skip. Only what's in neither is gone.
  */
-export function excludeFromGraph(graph: ContentGraph, options: ContentGraphOptions): ContentGraph {
-  const excluded = excluder(options);
-  const nodes = graph.nodes.filter((n) => !excluded(n.kind, n.slug));
-  const ids = new Set(nodes.map((n) => n.id));
-  return { nodes, edges: graph.edges.filter((e) => ids.has(e.source) && ids.has(e.target)) };
+export function alignGraph(
+  base: ContentGraph,
+  unfiltered: ContentGraph,
+  current: ContentGraph,
+): ContentGraph {
+  return {
+    nodes: align(base.nodes, unfiltered.nodes, current.nodes, (n) => n.id),
+    edges: align(base.edges, unfiltered.edges, current.edges, edgeKey),
+  };
 }
 
 /**
- * The base branch's data model under the running config's `exclude`, as `buildSchema` applies it:
- * excluded tables go, with their relations; blocks fields stop listing excluded blocks; and an
- * excluded block's fields, which `buildSchema` doesn't walk, take their relations with them.
+ * The base branch's data model, aligned the same way. `unfiltered` is the running config built
+ * with nothing excluded and hidden fields kept, so a table that's excluded now, a field that's
+ * hidden now, and a reference inside an excluded block are filtered, not deleted.
  */
-export function excludeFromSchema(schema: Schema, options: ContentGraphOptions): Schema {
-  const excluded = excluder(options);
-  const entities = schema.entities
-    .filter((e) => !excluded(e.kind, e.slug))
-    .map((entity) => ({
-      ...entity,
-      fields: entity.fields.map((field) => withoutExcluded(field, excluded)),
-    }));
-  const ids = new Set(entities.map((e) => e.id));
-  const relations = schema.relations.filter(
-    (r) =>
-      ids.has(r.from) &&
-      ids.has(r.to) &&
-      ![...r.path.matchAll(/\[([^\]]+)\]/g)].some(([, block]) => excluded('block', block)),
+export function alignSchema(base: Schema, unfiltered: Schema, current: Schema): Schema {
+  const unfilteredById = new Map(unfiltered.entities.map((e) => [e.id, e]));
+  const currentById = new Map(current.entities.map((e) => [e.id, e]));
+  const entities = align(base.entities, unfiltered.entities, current.entities, (e) => e.id).map(
+    (entity) => {
+      const now = currentById.get(entity.id);
+      const all = unfilteredById.get(entity.id);
+      if (!now || !all) return entity;
+      return { ...entity, fields: align(entity.fields, all.fields, now.fields, (f) => f.name) };
+    },
   );
-  return { entities, relations };
+  return {
+    entities,
+    relations: align(base.relations, unfiltered.relations, current.relations, relationKey),
+  };
 }
 
-function withoutExcluded(field: SchemaField, excluded: ReturnType<typeof excluder>): SchemaField {
-  // As `buildSchema` writes it: a blocks field lists only blocks that aren't excluded, while
-  // `relationTo` keeps every slug (the pages drop the ones the viewer can't read)
-  if (!field.blocks) return field;
-  return { ...field, blocks: field.blocks.filter((slug) => !excluded('block', slug)) };
+/**
+ * Each base item: dropped when the running config has it but filters it out; the current item when
+ * it differs from the base only by that filtering (a blocks field without an excluded block);
+ * otherwise as it was, for the diff to compare.
+ */
+function align<T>(base: T[], unfiltered: T[], current: T[], key: (item: T) => string): T[] {
+  const all = new Map(unfiltered.map((item) => [key(item), item]));
+  const shown = new Map(current.map((item) => [key(item), item]));
+  return base.flatMap((item) => {
+    const k = key(item);
+    const exists = all.get(k);
+    const now = shown.get(k);
+    if (!now) return exists ? [] : [item];
+    return exists && sameValue(item, exists) ? [now] : [item];
+  });
 }
 
 export function relationKey(r: Pick<SchemaRelation, 'from' | 'path' | 'to'>) {

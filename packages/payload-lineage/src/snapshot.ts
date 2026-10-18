@@ -56,18 +56,32 @@ export type BaseSnapshot<T> =
   | { state: 'ready'; base: string; value: T }
   /** The base branch has no snapshot yet, e.g. on the PR that adds the option. */
   | { state: 'no-snapshot'; base: string }
+  /** The base branch's file isn't JSON, e.g. after a badly resolved merge conflict. */
+  | { state: 'invalid'; base: string }
   /** No git, or no base branch to compare with, e.g. a shallow CI clone. */
   | { state: 'no-base'; branch: string };
 
 // By merge base and file: what a commit holds never changes
 const cache = new Map<string, unknown>();
+const MISSING = Symbol('missing');
+const INVALID = Symbol('invalid');
+
+function parse(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return INVALID;
+  }
+}
 
 export async function readBaseSnapshot<K extends SnapshotKind>(
   { dir, baseBranch }: ResolvedSnapshot,
   kind: K,
   cwd = process.cwd(),
 ): Promise<BaseSnapshot<Contents[K]>> {
-  const git = async (...args: string[]) => (await run('git', args, { cwd })).stdout.trim();
+  // A large config's data model can pass `execFile`'s 1 MiB default
+  const git = async (...args: string[]) =>
+    (await run('git', args, { cwd, maxBuffer: 256 * 1024 * 1024 })).stdout.trim();
   let base: string | undefined;
   let mergeBase: string;
   try {
@@ -96,8 +110,10 @@ export async function readBaseSnapshot<K extends SnapshotKind>(
   const key = `${mergeBase}:${file}`;
   if (!cache.has(key)) {
     const text = await git('show', `${mergeBase}:${file}`).catch(() => null);
-    cache.set(key, text === null ? null : (JSON.parse(text) as unknown));
+    cache.set(key, text === null ? MISSING : parse(text));
   }
-  const value = cache.get(key) as Contents[K] | null;
-  return value ? { state: 'ready', base, value } : { state: 'no-snapshot', base };
+  const value = cache.get(key);
+  if (value === MISSING) return { state: 'no-snapshot', base };
+  if (value === INVALID) return { state: 'invalid', base };
+  return { state: 'ready', base, value: value as Contents[K] };
 }

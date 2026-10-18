@@ -90,7 +90,12 @@ type ConfigLike = {
 const LAYOUT = new Set(['row', 'collapsible']);
 
 /** Builds the data model of a Payload config: each collection and global with its fields, and the relations between them. */
-export function buildSchema(config: PayloadConfigLike, options: ContentGraphOptions = {}): Schema {
+export function buildSchema(
+  config: PayloadConfigLike,
+  options: ContentGraphOptions = {},
+  /** Keeps hidden fields too: only for telling, on the server, what's hidden from what's gone. */
+  { includeHidden = false }: { includeHidden?: boolean } = {},
+): Schema {
   const { collections = [], globals = [], blocks = [] } = config as ConfigLike;
   const excluded = excluder(options);
   const shownCollections = collections.filter((c) => !excluded('collection', c.slug));
@@ -114,7 +119,7 @@ export function buildSchema(config: PayloadConfigLike, options: ContentGraphOpti
     const walk = (list: FieldLike[], path: string, row: SchemaField | null, many: boolean) => {
       for (const field of list) {
         // Internal fields and admin-only UI hold nothing a reader of the data model works with
-        if (field.type === 'ui' || field.hidden) continue;
+        if (field.type === 'ui' || (field.hidden && !includeHidden)) continue;
         if (LAYOUT.has(field.type) || (field.type === 'group' && !field.name)) {
           walk(field.fields ?? [], path, row, many);
           continue;

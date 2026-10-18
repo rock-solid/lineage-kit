@@ -88,4 +88,33 @@ describe('readBaseSnapshot', () => {
       branch: 'main',
     });
   });
+
+  it('reads a snapshot past execFile’s 1 MiB default', async () => {
+    const { root, git } = await repo();
+    // About 2 MiB of nodes
+    const big = {
+      nodes: Array.from({ length: 20000 }, (_, i) => graph(`collection-${i}`).nodes[0]),
+      edges: [],
+    };
+    await writeSnapshot(path.join(root, 'cms/lineage'), 'graph', big);
+    git('add', '.');
+    git('commit', '-q', '-m', 'snapshot');
+    const found = await readBaseSnapshot(snapshot, 'graph', root);
+    expect(found.state).toBe('ready');
+    expect(found.state === 'ready' && found.value.nodes).toHaveLength(20000);
+  });
+
+  it('says the snapshot is invalid instead of failing when it isn’t JSON', async () => {
+    const { root, git } = await repo();
+    const dir = path.join(root, 'cms/lineage');
+    await writeSnapshot(dir, 'schema', { entities: [], relations: [] });
+    // As a badly resolved merge conflict leaves it
+    await writeFile(path.join(dir, 'schema.json'), '<<<<<<< HEAD\n{}\n=======\n');
+    git('add', '.');
+    git('commit', '-q', '-m', 'conflict');
+    expect(await readBaseSnapshot(snapshot, 'schema', root)).toEqual({
+      state: 'invalid',
+      base: 'main',
+    });
+  });
 });

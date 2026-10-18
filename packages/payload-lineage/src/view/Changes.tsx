@@ -36,7 +36,9 @@ export const ChangedToggle: React.FC<{
             ? `Needs git and the ${changes.branch} branch (origin/${changes.branch} or ${changes.branch}) to compare with`
             : changes.state === 'no-snapshot'
               ? `${changes.base} has no snapshot to compare with yet; it will once one is merged`
-              : `Only what changed since ${changes.base}, and what it affects`
+              : changes.state === 'invalid'
+                ? `The snapshot on ${changes.base} isn't valid JSON: regenerate it there (start Payload, or open a page) and commit it`
+                : `Only what changed since ${changes.base}, and what it affects`
         }
       >
         <input type="checkbox" checked={ready && checked} disabled={!ready} onChange={onChange} />
@@ -52,6 +54,9 @@ export const ChangedToggle: React.FC<{
       )}
       {changes.state === 'no-snapshot' && (
         <span className="rs-lineage__count">nothing on {changes.base} to compare with yet</span>
+      )}
+      {changes.state === 'invalid' && (
+        <span className="rs-lineage__count">the snapshot on {changes.base} isn't valid JSON</span>
       )}
     </>
   );
