@@ -224,7 +224,12 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, changes, adminURLs }) => {
 
   const byId = useMemo(() => new Map(schema.entities.map((e) => [e.id, e])), [schema]);
   const focused = selected ? byId.get(selected) : undefined;
-  const fieldCount = entities.reduce((n, e) => n + e.fields.length, 0);
+  // What the running config has, as in the details panel
+  const fieldCount = entities.reduce(
+    (n, e) =>
+      e.change === 'deleted' ? n : n + e.fields.filter((f) => f.change !== 'deleted').length,
+    0,
+  );
 
   return (
     <div className="rs-lineage-layout" ref={layoutRef}>

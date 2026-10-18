@@ -129,6 +129,12 @@ html[data-theme='dark'] .rs-lineage {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.rs-lineage__label-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .rs-lineage__self {
   color: var(--kind);
 }
@@ -584,7 +590,7 @@ html[data-theme='dark'] .rs-lineage {
   border-style: dashed;
   opacity: 0.55;
 }
-.rs-change--deleted .rs-lineage__label,
+.rs-change--deleted .rs-lineage__label-text,
 .rs-change--deleted .rs-erd__title {
   text-decoration: line-through;
 }

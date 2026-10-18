@@ -388,7 +388,8 @@ const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
       onBlur={() => onTrace(null)}
     >
       <span className="rs-lineage__label">
-        {node.label}
+        <span className="rs-lineage__label-text">{node.label}</span>
+        <ChangeBadge change={node.change} />
         {selfLink && (
           <span className="rs-lineage__self" title="Links to itself">
             ↻
@@ -397,7 +398,6 @@ const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
       </span>
       <span className="rs-lineage__meta">
         {node.kind} · {node.slug}
-        <ChangeBadge change={node.change} />
       </span>
     </button>
     <Handle

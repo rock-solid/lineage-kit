@@ -21,5 +21,7 @@ model is small but shows each kind of link the pages draw:
 | `categories.posts`                | a join: a row, not a second line             |
 | `header.nav[].page`               | a global's list, one-to-many                 |
 
-The plugin also writes the lineage graph to `lineage/content.json` on each start. Delete
+The plugin also writes the lineage graph to `lineage/content.json` on each start, and the snapshot
+in `lineage/graph.json` and `lineage/schema.json`, which are committed: change a collection on a
+branch and **Changed since main** on either page shows what changed. Delete
 `example.db` to start over.
