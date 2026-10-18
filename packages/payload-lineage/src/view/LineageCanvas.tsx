@@ -19,10 +19,13 @@ import { trace } from '@rocksoliddigital/lineage-core';
 import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { ChangesStatus, DiffedGraph } from '../diff';
 import { contentGraphToMermaid } from '../mermaid';
-import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
+import type { ContentKind } from '../types';
+import { ChangeBadge, ChangedToggle, ChangeLegend } from './Changes';
 import { CopyMermaid } from './CopyMermaid';
 import {
+  changeCounts,
   fitPadding,
   layoutEdges,
   LINEAGE_LAYOUT,
@@ -38,6 +41,8 @@ const KINDS: { kind: ContentKind; label: string }[] = [
   { kind: 'global', label: 'Globals' },
 ];
 
+type ContentNode = DiffedGraph['nodes'][number];
+type ContentEdge = DiffedGraph['edges'][number];
 type NodeState = 'default' | 'active' | 'related' | 'dimmed' | 'selected';
 type NodeData = {
   node: ContentNode;
@@ -50,7 +55,10 @@ type NodeData = {
 type ContentFlowNode = Node<NodeData, 'content'>;
 
 export type LineageCanvasProps = {
-  graph: ContentGraph;
+  /** The graph, with what changed since the base branch when `changes` is ready. */
+  graph: DiffedGraph;
+  /** Whether "Changed since main" can compare; left out when the plugin's `snapshot` is off. */
+  changes?: ChangesStatus;
   /** Admin URLs of the collections and globals, by node id, for the "Open" links. */
   adminURLs: Record<string, string>;
 };
@@ -65,18 +73,23 @@ export const LineageCanvas: React.FC<LineageCanvasProps> = (props) => (
   </ReactFlowProvider>
 );
 
-const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
+const Canvas: React.FC<LineageCanvasProps> = ({ graph, changes, adminURLs }) => {
   const { fitView } = useReactFlow();
   const layoutRef = useRef<HTMLDivElement>(null);
   const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<ContentKind>>(new Set());
   const [hideUnconnected, setHideUnconnected] = useState(true);
+  const [changedOnly, setChangedOnly] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
   const visible = useMemo(
-    () => visibleGraph(graph, { hiddenKinds, hideUnconnected }),
-    [graph, hiddenKinds, hideUnconnected],
+    () => visibleGraph(graph, { hiddenKinds, hideUnconnected, changedOnly }),
+    [graph, hiddenKinds, hideUnconnected, changedOnly],
+  );
+  const counts = useMemo(
+    () => changeCounts(graph.nodes.filter((n) => !hiddenKinds.has(n.kind))),
+    [graph, hiddenKinds],
   );
 
   // Lays out again only when the nodes or links change, not on hover
@@ -142,7 +155,7 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
             id: `${e.source}->${e.target}:${e.kind}`,
             source: e.source,
             target: e.target,
-            className: `rs-lineage__edge rs-lineage__edge--${e.kind}${state}`,
+            className: `rs-lineage__edge rs-lineage__edge--${e.kind}${state}${e.change ? ` rs-lineage__edge--${e.change}` : ''}`,
             animated: !!onTrace,
           };
         }),
@@ -219,11 +232,27 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
                 />
                 Hide unconnected
               </label>
+              {changes && (
+                <ChangedToggle
+                  changes={changes}
+                  checked={changedOnly}
+                  onChange={() => setChangedOnly((current) => !current)}
+                  counts={counts}
+                  shown={visible.nodes.length}
+                  unit="node"
+                />
+              )}
               <span className="rs-lineage__count">
                 {visible.nodes.length} nodes, {links} link{links === 1 ? '' : 's'}
               </span>
               <CopyMermaid
-                text={() => contentGraphToMermaid({ nodes: visible.nodes, edges: visible.edges })}
+                // What the running config has: deleted nodes and links would read as current ones
+                text={() =>
+                  contentGraphToMermaid({
+                    nodes: visible.nodes.filter((n) => n.change !== 'deleted'),
+                    edges: visible.edges.filter((e) => e.change !== 'deleted'),
+                  })
+                }
                 size={visible.nodes.length}
               />
             </div>
@@ -236,6 +265,7 @@ const Canvas: React.FC<LineageCanvasProps> = ({ graph, adminURLs }) => {
         edges={visible.edges}
         byId={byId}
         adminURLs={adminURLs}
+        changes={changes}
         onSelect={setSelected}
       />
     </div>
@@ -247,8 +277,9 @@ const Details: React.FC<{
   edges: readonly ContentEdge[];
   byId: Map<string, ContentNode>;
   adminURLs: Record<string, string>;
+  changes?: ChangesStatus;
   onSelect: (id: string) => void;
-}> = ({ node, edges, byId, adminURLs, onSelect }) => {
+}> = ({ node, edges, byId, adminURLs, changes, onSelect }) => {
   if (!node) {
     return (
       <aside className="rs-lineage__details">
@@ -270,6 +301,7 @@ const Details: React.FC<{
             <dd>blocks field</dd>
           </div>
         </dl>
+        {changes?.state === 'ready' && <ChangeLegend base={changes.base} />}
       </aside>
     );
   }
@@ -284,6 +316,7 @@ const Details: React.FC<{
           <span className="rs-lineage__link-name">
             <span className={`rs-lineage__swatch rs-lineage__swatch--${other.kind}`} />
             {edge.source === edge.target ? 'Itself' : other.label}
+            <ChangeBadge change={edge.change} />
           </span>
           <span className="rs-lineage__via">
             {edge.kind} · {edge.fields.join(', ')}
@@ -296,9 +329,15 @@ const Details: React.FC<{
     <aside className="rs-lineage__details" aria-live="polite">
       <div>
         <span className={`rs-lineage__kind rs-lineage__kind--${node.kind}`}>{node.kind}</span>
+        <ChangeBadge change={node.change} />
         <h2 className="rs-lineage__name">{node.label}</h2>
         <code className="rs-lineage__id">{node.id}</code>
       </div>
+      {node.change === 'deleted' && changes?.state === 'ready' && (
+        <p className="rs-lineage__hint">
+          On {changes.base} but not in the running config. Its links are the ones it had there.
+        </p>
+      )}
       {url && (
         <a className="rs-lineage__open" href={url}>
           Open in the admin
@@ -330,7 +369,7 @@ const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
   data: { node, state, selfLink, onSelect, onTrace },
 }) => (
   <div
-    className={`rs-lineage__node rs-lineage__node--${node.kind} rs-lineage__node--${state}`}
+    className={`rs-lineage__node rs-lineage__node--${node.kind} rs-lineage__node--${state}${node.change ? ` rs-change--${node.change}` : ''}`}
     title={node.id}
   >
     <Handle
@@ -343,13 +382,14 @@ const ContentNodeView: React.FC<NodeProps<ContentFlowNode>> = ({
     <button
       type="button"
       className="rs-lineage__select"
-      aria-label={`${node.label}, ${node.kind}: show what it's built from and what uses it`}
+      aria-label={`${node.label}, ${node.kind}${node.change ? `, ${node.change}` : ''}: show what it's built from and what uses it`}
       onClick={() => onSelect(node.id)}
       onFocus={() => onTrace(node.id)}
       onBlur={() => onTrace(null)}
     >
       <span className="rs-lineage__label">
-        {node.label}
+        <span className="rs-lineage__label-text">{node.label}</span>
+        <ChangeBadge change={node.change} />
         {selfLink && (
           <span className="rs-lineage__self" title="Links to itself">
             ↻

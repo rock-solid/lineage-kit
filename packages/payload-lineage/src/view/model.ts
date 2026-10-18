@@ -1,8 +1,14 @@
 // What the admin view shows of a graph, kept free of React so it can be tested on its own.
 
-import type { LayoutEdge, LayoutOptions } from '@rocksoliddigital/lineage-core';
+import {
+  adjacency,
+  walk,
+  type LayoutEdge,
+  type LayoutOptions,
+} from '@rocksoliddigital/lineage-core';
 
-import type { ContentEdge, ContentGraph, ContentKind, ContentNode } from '../types';
+import type { DiffedGraph } from '../diff';
+import type { ContentEdge, ContentKind, ContentNode } from '../types';
 
 export const NODE_WIDTH = 200;
 /**
@@ -22,29 +28,48 @@ export type ViewFilter = {
   hiddenKinds: ReadonlySet<ContentKind>;
   /** Leaves out nodes with no links, like a `users` collection nothing points at. */
   hideUnconnected: boolean;
+  /** Only what changed and everything that uses it, like dbt's `state:modified+`. */
+  changedOnly?: boolean;
 };
 
 /** The graph without the collections and globals the viewer can't read. Blocks have no access of their own. */
 export function forViewer(
-  graph: ContentGraph,
-  canRead: (node: ContentNode) => boolean,
-): ContentGraph {
+  graph: DiffedGraph,
+  canRead: (node: DiffedGraph['nodes'][number]) => boolean,
+): DiffedGraph {
   const nodes = graph.nodes.filter((n) => n.kind === 'block' || canRead(n));
   return { nodes, edges: edgesBetween(nodes, graph.edges) };
 }
 
-export function visibleGraph(graph: ContentGraph, { hiddenKinds, hideUnconnected }: ViewFilter) {
+export function visibleGraph(
+  graph: DiffedGraph,
+  { hiddenKinds, hideUnconnected, changedOnly }: ViewFilter,
+): DiffedGraph {
   let nodes = graph.nodes.filter((n) => !hiddenKinds.has(n.kind));
   let edges = edgesBetween(nodes, graph.edges);
+  const changed = new Set(nodes.filter((n) => n.change).map((n) => n.id));
+  if (changedOnly) {
+    const { down } = adjacency(edges);
+    const shown = new Set([...changed].flatMap((id) => [id, ...walk(id, down)]));
+    nodes = nodes.filter((n) => shown.has(n.id));
+    edges = edgesBetween(nodes, edges);
+  }
   if (hideUnconnected) {
-    // A link to itself doesn't connect a node to the rest of the graph
+    // A link to itself doesn't connect a node to the rest of the graph. Changes stay, linked or not.
     const linked = new Set(
       edges.filter((e) => e.source !== e.target).flatMap((e) => [e.source, e.target]),
     );
-    nodes = nodes.filter((n) => linked.has(n.id));
+    nodes = nodes.filter((n) => linked.has(n.id) || changed.has(n.id));
     edges = edgesBetween(nodes, edges);
   }
   return { nodes, edges };
+}
+
+/** Counts of the nodes that changed, by change, for the toolbar. */
+export function changeCounts(nodes: DiffedGraph['nodes']) {
+  const counts = { added: 0, changed: 0, deleted: 0 };
+  for (const n of nodes) if (n.change) counts[n.change]++;
+  return counts;
 }
 
 export const LINEAGE_LAYOUT: LayoutOptions = {
@@ -77,7 +102,7 @@ export function linksToItself(id: string, edges: readonly ContentEdge[]) {
   return edges.some((e) => e.source === id && e.target === id);
 }
 
-function edgesBetween(nodes: readonly ContentNode[], edges: readonly ContentEdge[]) {
+function edgesBetween<E extends ContentEdge>(nodes: readonly ContentNode[], edges: readonly E[]) {
   const ids = new Set(nodes.map((n) => n.id));
   return edges.filter((e) => ids.has(e.source) && ids.has(e.target));
 }

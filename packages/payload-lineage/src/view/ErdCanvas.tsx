@@ -18,10 +18,13 @@ import {
 import { useLayout } from '@rocksoliddigital/lineage-core/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { ChangesStatus, DiffedEntity, DiffedField, DiffedSchema } from '../diff';
 import { schemaToMermaid } from '../mermaid';
-import type { Schema, SchemaEntity, SchemaField } from '../schema';
+import type { SchemaField } from '../schema';
+import { ChangeBadge, ChangedToggle, ChangeLegend } from './Changes';
 import { CopyMermaid } from './CopyMermaid';
 import {
+  changedTables,
   describeCardinality,
   erdEdges,
   ERD_LAYOUT,
@@ -34,9 +37,10 @@ import {
 import { fitPadding } from './model';
 
 type TableState = 'default' | 'active' | 'related' | 'dimmed' | 'selected';
+type SchemaEntity = DiffedEntity;
 type TableData = {
   entity: SchemaEntity;
-  rows: SchemaField[];
+  rows: DiffedField[];
   hidden: number;
   expanded: boolean;
   /** Off with "Key fields only", which shows the same rows either way. */
@@ -52,7 +56,10 @@ type TableData = {
 type TableNode = Node<TableData, 'table'>;
 
 export type ErdCanvasProps = {
-  schema: Schema;
+  /** The data model, with what changed since the base branch when `changes` is ready. */
+  schema: DiffedSchema;
+  /** Whether "Changed since main" can compare; left out when the plugin's `snapshot` is off. */
+  changes?: ChangesStatus;
   /** Admin URLs of the collections and globals, by entity id, for the "Open" links. */
   adminURLs: Record<string, string>;
 };
@@ -64,19 +71,33 @@ export const ErdCanvas: React.FC<ErdCanvasProps> = (props) => (
   </ReactFlowProvider>
 );
 
-const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
+const Canvas: React.FC<ErdCanvasProps> = ({ schema, changes, adminURLs }) => {
   const { fitView } = useReactFlow();
   const layoutRef = useRef<HTMLDivElement>(null);
   const [showGlobals, setShowGlobals] = useState(true);
   const [keysOnly, setKeysOnly] = useState(false);
+  const [changedOnly, setChangedOnly] = useState(false);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
-  const entities = useMemo(
+  const shownTables = useMemo(
     () => schema.entities.filter((e) => showGlobals || e.kind !== 'global'),
     [schema, showGlobals],
   );
+  const affected = useMemo(
+    () => (changedOnly ? changedTables(schema) : null),
+    [schema, changedOnly],
+  );
+  const entities = useMemo(
+    () => (affected ? shownTables.filter((e) => affected.has(e.id)) : shownTables),
+    [shownTables, affected],
+  );
+  const counts = useMemo(() => {
+    const counts = { added: 0, changed: 0, deleted: 0 };
+    for (const e of shownTables) if (e.change) counts[e.change]++;
+    return counts;
+  }, [shownTables]);
   const relations = useMemo(() => {
     const ids = new Set(entities.map((e) => e.id));
     return schema.relations.filter((r) => ids.has(r.from) && ids.has(r.to));
@@ -188,7 +209,7 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
           label: l.cardinality,
           labelClassName: 'rs-erd__cardinality',
           labelBgClassName: 'rs-erd__cardinality-bg',
-          className: `rs-lineage__edge rs-lineage__edge--${kind}${state}`,
+          className: `rs-lineage__edge rs-lineage__edge--${kind}${state}${l.change ? ` rs-lineage__edge--${l.change}` : ''}`,
           animated: !!on,
         };
       }),
@@ -203,7 +224,12 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
 
   const byId = useMemo(() => new Map(schema.entities.map((e) => [e.id, e])), [schema]);
   const focused = selected ? byId.get(selected) : undefined;
-  const fieldCount = entities.reduce((n, e) => n + e.fields.length, 0);
+  // What the running config has, as in the details panel
+  const fieldCount = entities.reduce(
+    (n, e) =>
+      e.change === 'deleted' ? n : n + e.fields.filter((f) => f.change !== 'deleted').length,
+    0,
+  );
 
   return (
     <div className="rs-lineage-layout" ref={layoutRef}>
@@ -251,17 +277,33 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
                 <input type="checkbox" checked={keysOnly} onChange={() => setKeysOnly((v) => !v)} />
                 Key fields only
               </label>
+              {changes && (
+                <ChangedToggle
+                  changes={changes}
+                  checked={changedOnly}
+                  onChange={() => setChangedOnly((v) => !v)}
+                  counts={counts}
+                  shown={entities.length}
+                  unit="table"
+                />
+              )}
               <span className="rs-lineage__count">
                 {entities.length} tables, {fieldCount} fields, {lines.length} references
               </span>
               <CopyMermaid
-                // Every field, or the key fields with "Key fields only", not the cut-down tables
+                // Every field, or the key fields with "Key fields only", not the cut-down tables;
+                // and what the running config has, since deleted ones would read as current
                 text={() =>
                   schemaToMermaid({
-                    entities: tables.map((t) =>
-                      keysOnly ? { ...t.entity, fields: t.rows } : t.entity,
-                    ),
-                    relations,
+                    entities: tables
+                      .filter((t) => t.entity.change !== 'deleted')
+                      .map((t) => ({
+                        ...t.entity,
+                        fields: (keysOnly ? t.rows : t.entity.fields).filter(
+                          (f) => f.change !== 'deleted',
+                        ),
+                      })),
+                    relations: relations.filter((r) => r.change !== 'deleted'),
                   })
                 }
                 size={entities.length}
@@ -276,6 +318,7 @@ const Canvas: React.FC<ErdCanvasProps> = ({ schema, adminURLs }) => {
         lines={lines}
         byId={byId}
         adminURLs={adminURLs}
+        changes={changes}
         onSelect={setSelected}
       />
     </div>
@@ -287,8 +330,9 @@ const Details: React.FC<{
   lines: readonly ErdEdge[];
   byId: Map<string, SchemaEntity>;
   adminURLs: Record<string, string>;
+  changes?: ChangesStatus;
   onSelect: (id: string) => void;
-}> = ({ entity, lines, byId, adminURLs, onSelect }) => {
+}> = ({ entity, lines, byId, adminURLs, changes, onSelect }) => {
   if (!entity) {
     return (
       <aside className="rs-lineage__details">
@@ -322,6 +366,7 @@ const Details: React.FC<{
             <dd>required</dd>
           </div>
         </dl>
+        {changes?.state === 'ready' && <ChangeLegend base={changes.base} />}
       </aside>
     );
   }
@@ -339,6 +384,7 @@ const Details: React.FC<{
             <span className={`rs-lineage__swatch rs-lineage__swatch--${other.kind}`} />
             {other.label}
             <span className="rs-erd__cardinality-tag">{line.cardinality}</span>
+            <ChangeBadge change={line.change} />
           </span>
           <span className="rs-erd__sentence">
             {describeCardinality(line.cardinality, from, to)}
@@ -356,11 +402,19 @@ const Details: React.FC<{
           {entity.auth ? ' · auth' : ''}
           {entity.upload ? ' · upload' : ''}
         </span>
+        <ChangeBadge change={entity.change} />
         <h2 className="rs-lineage__name">{entity.label}</h2>
         <code className="rs-lineage__id">
-          {entity.slug} · {entity.fields.length} fields
+          {entity.slug} · {entity.fields.filter((f) => f.change !== 'deleted').length} fields
         </code>
       </div>
+      {entity.change === 'deleted' && changes?.state === 'ready' && (
+        <p className="rs-lineage__hint">
+          On {changes.base} but not in the running config. Its fields and references are the ones it
+          had there.
+        </p>
+      )}
+      {entity.change === 'changed' && <FieldChanges fields={entity.fields} />}
       {url && (
         <a className="rs-lineage__open" href={url}>
           Open in the admin
@@ -401,7 +455,9 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
     onTrace,
   },
 }) => (
-  <div className={`rs-erd__table rs-lineage__node--${entity.kind} rs-erd__table--${state}`}>
+  <div
+    className={`rs-erd__table rs-lineage__node--${entity.kind} rs-erd__table--${state}${entity.change ? ` rs-change--${entity.change}` : ''}`}
+  >
     <Handle
       id="table"
       className="rs-lineage__handle"
@@ -414,12 +470,15 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
       type="button"
       className="rs-erd__header"
       title={entity.id}
-      aria-label={`${entity.label}, ${entity.kind}: show its references`}
+      aria-label={`${entity.label}, ${entity.kind}${entity.change ? `, ${entity.change}` : ''}: show its references`}
       onClick={() => onSelect(entity.id)}
       onFocus={() => onTrace(entity.id)}
       onBlur={() => onTrace(null)}
     >
-      <span className="rs-erd__title">{entity.label}</span>
+      <span className="rs-erd__title">
+        {entity.label}
+        <ChangeBadge change={entity.change} />
+      </span>
       <span className="rs-erd__badge">
         {entity.kind === 'global'
           ? 'global'
@@ -434,8 +493,8 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
       {rows.map((f) => (
         <li
           key={f.name}
-          className={`rs-erd__row${linked.has(f.name) ? ' rs-erd__row--link' : ''}`}
-          title={describe(f)}
+          className={`rs-erd__row${linked.has(f.name) ? ' rs-erd__row--link' : ''}${f.change && entity.change !== 'deleted' ? ` rs-erd__row--${f.change}` : ''}`}
+          title={`${describe(f)}${f.change ? ` (${f.change})` : ''}`}
         >
           <span className="rs-erd__field">
             {f.name}
@@ -477,6 +536,39 @@ const TableView: React.FC<NodeProps<TableNode>> = ({
     )}
   </div>
 );
+
+/** The fields added, deleted or changed in a table, with what a changed one was before. */
+const FieldChanges: React.FC<{ fields: readonly DiffedField[] }> = ({ fields }) => {
+  const changed = fields.filter((f) => f.change);
+  if (!changed.length) return null;
+  return (
+    <section>
+      <h3 className="rs-lineage__heading">Changed fields · {changed.length}</h3>
+      <ul className="rs-erd__changes">
+        {changed.map((f) => (
+          <li key={f.name}>
+            <span className="rs-lineage__link-name">
+              <code>{f.name}</code>
+              <ChangeBadge change={f.change} />
+            </span>
+            <span className="rs-lineage__via">
+              {f.before
+                ? `${summary(f.before)} → ${summary(f)}`
+                : // Changed with the same settings: what it references changed (see References)
+                  f.change === 'changed'
+                  ? `${summary(f)}; references changed`
+                  : summary(f)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+function summary(f: SchemaField) {
+  return describe(f).slice(f.name.length + 2);
+}
 
 /** A row's tooltip: type, cardinality and what it points at. */
 function describe(f: SchemaField) {

@@ -60,6 +60,20 @@ export type LineagePluginOptions = ContentGraphOptions & {
    * for the Storybook page to merge. Written outside production only.
    */
   outputFile?: string;
+  /**
+   * The lineage graph and the data model as JSON, in `dir`, for the pages' "Changed since main"
+   * view. Commit the files: on a branch, the pages compare the running config with the base
+   * branch's copies, read with git. Written outside production only, when Payload starts and when a
+   * page is opened. `true` for the defaults.
+   */
+  snapshot?: boolean | SnapshotOptions;
+};
+
+export type SnapshotOptions = {
+  /** Folder for `graph.json` and `schema.json`, relative to the working directory. Defaults to `lineage`. */
+  dir?: string;
+  /** Branch to compare with (`origin/<branch>` first). Defaults to `main`. */
+  baseBranch?: string;
 };
 
 export type LineageAccess = (args: {
@@ -71,4 +85,5 @@ export type LineageAccess = (args: {
 export type LineageCustomConfig = {
   graphOptions: ContentGraphOptions;
   access?: LineageAccess;
+  snapshot?: { dir: string; baseBranch: string };
 };

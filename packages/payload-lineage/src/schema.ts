@@ -1,3 +1,4 @@
+import { excluder } from './exclude';
 import type { PayloadConfigLike } from './graph';
 import type { ContentGraphOptions } from './types';
 
@@ -85,21 +86,18 @@ type ConfigLike = {
   blocks?: BlockLike[];
 };
 
-// Payload adds these collections to every sanitized config; it adds no globals or blocks
-const INTERNAL_COLLECTION = /^payload-/;
 // Lay fields out without storing anything under their own name
 const LAYOUT = new Set(['row', 'collapsible']);
 
 /** Builds the data model of a Payload config: each collection and global with its fields, and the relations between them. */
 export function buildSchema(
   config: PayloadConfigLike,
-  { exclude = [] }: ContentGraphOptions = {},
+  options: ContentGraphOptions = {},
+  /** Keeps hidden fields too: only for telling, on the server, what's hidden from what's gone. */
+  { includeHidden = false }: { includeHidden?: boolean } = {},
 ): Schema {
   const { collections = [], globals = [], blocks = [] } = config as ConfigLike;
-  const excluded = (kind: string, slug: string) =>
-    (kind === 'collection' && INTERNAL_COLLECTION.test(slug)) ||
-    exclude.includes(slug) ||
-    exclude.includes(`${kind}:${slug}`);
+  const excluded = excluder(options);
   const shownCollections = collections.filter((c) => !excluded('collection', c.slug));
   const shownGlobals = globals.filter((g) => !excluded('global', g.slug));
   const targets = new Set(shownCollections.map((c) => c.slug));
@@ -121,7 +119,7 @@ export function buildSchema(
     const walk = (list: FieldLike[], path: string, row: SchemaField | null, many: boolean) => {
       for (const field of list) {
         // Internal fields and admin-only UI hold nothing a reader of the data model works with
-        if (field.type === 'ui' || field.hidden) continue;
+        if (field.type === 'ui' || (field.hidden && !includeHidden)) continue;
         if (LAYOUT.has(field.type) || (field.type === 'group' && !field.name)) {
           walk(field.fields ?? [], path, row, many);
           continue;

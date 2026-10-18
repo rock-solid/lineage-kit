@@ -10,6 +10,8 @@ import React from 'react';
 import { ErdCanvas, LineageCanvas, LineageNavLinkClient } from './client.js';
 import { buildContentGraph, type PayloadConfigLike } from './graph';
 import { canOpen, lineageConfig } from './access';
+import { compare } from './compare';
+import { alignGraph, alignSchema, diffGraph, diffSchema } from './diff';
 import { buildSchema } from './schema';
 import { schemaForViewer } from './view/erdModel';
 import { adminPath, forViewer } from './view/model';
@@ -27,10 +29,16 @@ const TABS = [
  * pass the plugin's `access`, showing only the collections and globals they can read.
  */
 export async function LineageView(props: LineageViewProps) {
-  const { payload, permissions, graphOptions } = await authorize(props, '/lineage');
+  const { payload, permissions, lineage } = await authorize(props, '/lineage');
+  const config = payload.config as PayloadConfigLike;
+  const current = buildContentGraph(config, lineage.graphOptions);
+  const { changes, base } = await compare(payload, lineage, 'graph');
   const graph = forViewer(
-    buildContentGraph(payload.config as PayloadConfigLike, graphOptions),
-    (node) => canRead(permissions, node),
+    base
+      ? // Against the config built with nothing excluded, so filtered isn't taken for deleted
+        diffGraph(alignGraph(base, buildContentGraph(config), current), current)
+      : current,
+    (node) => node.change === 'deleted' || canRead(permissions, node),
   );
   return (
     <Page
@@ -39,7 +47,14 @@ export async function LineageView(props: LineageViewProps) {
       title="Content lineage"
       intro="Collections, globals and blocks, and the fields that link them. Read left to right: what each is built from, then where it is used."
     >
-      <LineageCanvas graph={graph} adminURLs={adminURLs(props, graph.nodes)} />
+      <LineageCanvas
+        graph={graph}
+        changes={changes}
+        adminURLs={adminURLs(
+          props,
+          graph.nodes.filter((n) => n.change !== 'deleted'),
+        )}
+      />
     </Page>
   );
 }
@@ -49,10 +64,19 @@ export async function LineageView(props: LineageViewProps) {
  * global with its fields, and a line per reference. Same access as the lineage page.
  */
 export async function SchemaView(props: LineageViewProps) {
-  const { payload, permissions, graphOptions } = await authorize(props, '/lineage/schema');
+  const { payload, permissions, lineage } = await authorize(props, '/lineage/schema');
+  const config = payload.config as PayloadConfigLike;
+  const current = buildSchema(config, lineage.graphOptions);
+  const { changes, base } = await compare(payload, lineage, 'schema');
   const schema = schemaForViewer(
-    buildSchema(payload.config as PayloadConfigLike, graphOptions),
-    (entity) => canRead(permissions, entity),
+    base
+      ? // Against the config built with nothing excluded and hidden fields kept, as above
+        diffSchema(
+          alignSchema(base, buildSchema(config, {}, { includeHidden: true }), current),
+          current,
+        )
+      : current,
+    (entity) => entity.change === 'deleted' || canRead(permissions, entity),
   );
   return (
     <Page
@@ -61,7 +85,14 @@ export async function SchemaView(props: LineageViewProps) {
       title="Data model"
       intro="Each collection and global with its fields, and the fields that reference other collections. Each line says how many of one the other can reference: many-to-one, many-to-many or one-to-one."
     >
-      <ErdCanvas schema={schema} adminURLs={adminURLs(props, schema.entities)} />
+      <ErdCanvas
+        schema={schema}
+        changes={changes}
+        adminURLs={adminURLs(
+          props,
+          schema.entities.filter((e) => e.change !== 'deleted'),
+        )}
+      />
     </Page>
   );
 }
@@ -92,7 +123,7 @@ async function authorize({ initPageResult }: AdminViewServerProps, path: `/${str
     });
     redirect(`${to}?redirect=${encodeURIComponent(here)}`);
   }
-  return { payload, permissions, graphOptions: lineageConfig(payload).graphOptions };
+  return { payload, permissions, lineage: lineageConfig(payload) };
 }
 
 function canRead(

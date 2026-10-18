@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContentEdge, ContentGraph, ContentNode } from '../types';
 import {
   adminPath,
+  changeCounts,
   fitPadding,
   forViewer,
   layoutEdges,
@@ -80,6 +81,32 @@ describe('visibleGraph', () => {
     });
     expect(ids(nodes)).toEqual(['collection:pages', 'global:header']);
     expect(edges.every((e) => e.source !== 'block:hero' && e.target !== 'block:hero')).toBe(true);
+  });
+
+  it('shows only what changed and everything downstream of it with changedOnly', () => {
+    const diffed = {
+      ...graph,
+      nodes: graph.nodes.map((n) => (n.slug === 'hero' ? { ...n, change: 'changed' as const } : n)),
+    };
+    const { nodes } = visibleGraph(diffed, {
+      hiddenKinds: new Set(),
+      hideUnconnected: true,
+      changedOnly: true,
+    });
+    // Not media, which the block is built from: only what the change can affect
+    expect(ids(nodes)).toEqual(['block:hero', 'collection:pages', 'global:header']);
+  });
+
+  it('keeps a change on the page even with no links left, like a deleted collection', () => {
+    const diffed = {
+      ...graph,
+      nodes: graph.nodes.map((n) =>
+        n.slug === 'users' ? { ...n, change: 'deleted' as const } : n,
+      ),
+    };
+    const shown = visibleGraph(diffed, { hiddenKinds: new Set(), hideUnconnected: true });
+    expect(ids(shown.nodes)).toContain('collection:users');
+    expect(changeCounts(diffed.nodes)).toEqual({ added: 0, changed: 0, deleted: 1 });
   });
 
   it('shows everything when nothing is filtered', () => {
