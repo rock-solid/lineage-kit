@@ -5,10 +5,10 @@ used, and what a change affects.
 
 ## 📦 Packages
 
-| Package                                                                         | npm                                                                                                                                                       |                                                                                                                       |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| [`@rocksoliddigital/storybook-addon-lineage`](packages/storybook-addon-lineage) | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/storybook-addon-lineage)](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features)) |
-| [`@rocksoliddigital/payload-lineage`](packages/payload-lineage)                 | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/payload-lineage)](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)                 | Lineage and data model (ERD) pages in the Payload admin, from your config                                             |
+| Package                                                                         | npm                                                                                                                                                       |                                                                                                                            |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [`@rocksoliddigital/storybook-addon-lineage`](packages/storybook-addon-lineage) | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/storybook-addon-lineage)](https://www.npmjs.com/package/@rocksoliddigital/storybook-addon-lineage) | The lineage graph of your components, as a page in Storybook ([features](packages/storybook-addon-lineage#-features))      |
+| [`@rocksoliddigital/payload-lineage`](packages/payload-lineage)                 | [![npm](https://img.shields.io/npm/v/@rocksoliddigital/payload-lineage)](https://www.npmjs.com/package/@rocksoliddigital/payload-lineage)                 | Lineage and data model (ERD) pages in the Payload admin, from your config ([features](packages/payload-lineage#-features)) |
 
 ## 🚀 Quick start
 
