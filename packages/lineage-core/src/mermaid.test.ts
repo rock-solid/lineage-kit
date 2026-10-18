@@ -49,6 +49,33 @@ describe('toMermaidFlowchart', () => {
     });
     expect(text).toBe('flowchart TB\n  n0["A"]\n');
   });
+
+  it('leaves out colours Mermaid can’t parse, rather than breaking the diagram', () => {
+    const text = toMermaidFlowchart({
+      nodes: [
+        { id: 'a', label: 'A', group: 'rgb' },
+        { id: 'b', label: 'B', group: 'var' },
+        { id: 'c', label: 'C', group: 'named' },
+      ],
+      edges: [],
+      groups: [
+        { id: 'rgb', color: 'rgb(37, 99, 235)' },
+        { id: 'var', color: 'var(--layer)' },
+        { id: 'named', color: 'teal' },
+      ],
+    });
+    expect(text).toBe(
+      [
+        'flowchart LR',
+        '  n0["A"]',
+        '  n1["B"]',
+        '  n2["C"]',
+        '  classDef g2 fill:teal,stroke:teal,color:#fff',
+        '  class n2 g2',
+        '',
+      ].join('\n'),
+    );
+  });
 });
 
 describe('escapeLabel', () => {

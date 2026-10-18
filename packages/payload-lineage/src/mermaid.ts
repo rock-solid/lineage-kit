@@ -108,16 +108,19 @@ function safeWord(text: string) {
 
 /**
  * Crow's feet. Beside the target, how many it references: a list is many (`o{`), a single reference
- * one (`o|`), exactly one (`||`) only when required and to a single collection; a required
- * polymorphic reference needs one of its collections, not each. Beside the source, how many
- * reference each target: at most one for a global, which is one document, and for a unique
- * reference (`|o`); otherwise many (`}o`). Never `||` there: a target needn't be referenced at all.
+ * one (`o|`). At least one (`|{` for a list, `||` for a single reference) only when the field itself
+ * is required and points at one collection: a required polymorphic reference needs one of its
+ * collections, not each, and a reference inside an array or blocks field can have no rows. Beside
+ * the source, how many reference each target: at most one for a global, which is one document, and
+ * for a unique reference (`|o`); otherwise many (`}o`). Never `||` there: a target needn't be
+ * referenced at all.
  */
 function crowsFoot(relations: readonly SchemaRelation[], from: string, required: boolean) {
   const many = relations.some((r) => r.many);
   const atMostOne = from.startsWith('global:') || (relations.every((r) => r.unique) && !many);
   const fromSide = atMostOne ? '|o' : '}o';
-  const exactlyOne = required && relations.every((r) => !r.polymorphic);
-  const toSide = many ? 'o{' : exactlyOne ? '||' : 'o|';
+  // A nested reference's row is the array or blocks field around it, whose path differs from its own
+  const atLeastOne = required && relations.every((r) => !r.polymorphic && r.field === r.path);
+  const toSide = many ? (atLeastOne ? '|{' : 'o{') : atLeastOne ? '||' : 'o|';
   return `${fromSide}--${toSide}`;
 }

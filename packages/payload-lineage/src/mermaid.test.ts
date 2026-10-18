@@ -144,6 +144,46 @@ describe('schemaToMermaid', () => {
     expect(either).toContain('  links }o--o| media : "to"');
   });
 
+  it('marks a required list to one collection as at least one, but not a polymorphic or nested one', () => {
+    const lists = schemaToMermaid({
+      entities: [
+        entity('collection', 'posts', [
+          {
+            name: 'authors',
+            type: 'relationship',
+            required: true,
+            hasMany: true,
+            relationTo: ['users'],
+          },
+          {
+            name: 'related',
+            type: 'relationship',
+            required: true,
+            hasMany: true,
+            relationTo: ['pages', 'media'],
+          },
+          { name: 'gallery[]', type: 'array', required: true },
+        ]),
+        entity('collection', 'users', []),
+        entity('collection', 'pages', []),
+        entity('collection', 'media', []),
+      ],
+      relations: [
+        rel('collection:posts', 'authors', 'collection:users', { many: true }),
+        rel('collection:posts', 'related', 'collection:pages', { many: true, polymorphic: true }),
+        rel('collection:posts', 'related', 'collection:media', { many: true, polymorphic: true }),
+        rel('collection:posts', 'gallery[]', 'collection:media', {
+          many: true,
+          path: 'gallery[].image',
+        }),
+      ],
+    });
+    expect(lists).toContain('  posts }o--|{ users : "authors"');
+    expect(lists).toContain('  posts }o--o{ pages : "related"');
+    expect(lists).toContain('  posts }o--o{ media : "related"');
+    expect(lists).toContain('  posts }o--o{ media : "gallery[].image"');
+  });
+
   it('marks a global as referencing each target at most once, single or list', () => {
     const globals = schemaToMermaid({
       entities: [

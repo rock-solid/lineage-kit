@@ -31,10 +31,14 @@ export const MERMAID_READABLE_NODES = 50;
 
 const ARROW = { solid: '-->', dashed: '-.->', thick: '==>' } as const;
 
+// The colours a `classDef` can hold: Mermaid fails to parse the whole diagram on a bracket, so
+// `rgb(…)`, `hsl(…)` and `var(…)` can't go in, escaped or not.
+const MERMAID_COLOR = /^(#[0-9a-f]{3,8}|[a-z]+)$/i;
+
 /**
  * A flowchart, nodes and edges in the order given. Ids become `n0`, `n1`, … so any id is safe, and
  * labels are quoted with Mermaid's entity codes for the characters that would end them. An edge to
- * a node that isn't listed is left out.
+ * a node that isn't listed is left out, and so is a group's colour unless it's hex or a name.
  */
 export function toMermaidFlowchart({
   nodes,
@@ -58,7 +62,7 @@ export function toMermaidFlowchart({
 
   const used = new Set(nodes.map((n) => n.group).filter(Boolean));
   groups.forEach((g, i) => {
-    if (!used.has(g.id)) return;
+    if (!used.has(g.id) || !MERMAID_COLOR.test(g.color)) return;
     const members = nodes.filter((n) => n.group === g.id).map((n) => ids.get(n.id));
     lines.push(`  classDef g${i} fill:${g.color},stroke:${g.color},color:#fff`);
     lines.push(`  class ${members.join(',')} g${i}`);
