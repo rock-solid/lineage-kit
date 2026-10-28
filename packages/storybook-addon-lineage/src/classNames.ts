@@ -4,6 +4,7 @@ export const styles = {
   button: 'lk-button',
   changed: 'lk-changed',
   changedBadge: 'lk-changed-badge',
+  column: 'lk-column',
   count: 'lk-count',
   depths: 'lk-depths',
   dimmed: 'lk-dimmed',

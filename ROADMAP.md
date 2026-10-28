@@ -35,8 +35,8 @@ suggest or question anything here.
   full page.
 - **A selector box:** type dbt syntax (`2+Button+1`, `+FeatureGrid`, `Button,Card`,
   `state:modified+`) instead of clicking.
-- **The rest of the view in the URL:** layers, search, "Hide unconnected files" and changed-files
-  mode.
+- **The rest of the view in the URL:** layers, search, "Hide unconnected files", "Group by layer"
+  and changed-files mode.
 - **Dark mode** that follows Storybook's theme.
 
 ### 🔭 Later
@@ -95,7 +95,6 @@ What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 
 Not committed to; open an issue if one would help you.
 
-- Group nodes into a column per layer, as dbt does with sources, staging and marts.
 - Collapse a folder into one node.
 - Node details: lines of code, last change, owners from `CODEOWNERS`.
 - Find components nothing uses, and import cycles.

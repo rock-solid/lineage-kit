@@ -39,10 +39,14 @@ const DEPTHS = [0, 1, 2, 3, Infinity];
 const DOUBLE_CLICK_MS = 250;
 const MAX_RESULTS = 8;
 const LAYOUT: LayoutOptions = { layerSpacing: 90, nodeSpacing: 14, placement: 'BRANDES_KOEPF' };
+// A layer's column header, above the topmost node of the graph
+const HEADER_HEIGHT = 28;
+const HEADER_GAP = 16;
 
 type NodeState = 'default' | 'active' | 'related' | 'dimmed' | 'match';
 type NodeData = { node: LineageNode; layer: LineageLayer; state: NodeState };
 type LineageFlowNode = Node<NodeData, 'lineage'>;
+type ColumnFlowNode = Node<{ layer: LineageLayer }, 'column'>;
 
 export type LineageGraphProps = {
   /** Defaults to the project graph built at Storybook start. */
@@ -96,10 +100,16 @@ const LineageView: React.FC<LineageGraphProps> = ({
   const [query, setQuery] = useState('');
   const [hideUnlinked, setHideUnlinked] = useState(true);
   const [changedOnly, setChangedOnly] = useState(false);
+  const [grouped, setGrouped] = useState(true);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const layers = useMemo(() => new Map(graph.layers.map((l) => [l.id, l])), [graph]);
   const nodesById = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
+  // A graph built by hand may not set columns: then its layers go in the order listed
+  const columnOf = useMemo(
+    () => new Map(graph.layers.map((l, index) => [l.id, l.column ?? index])),
+    [graph],
+  );
 
   // Follow the props, so a link from a story or the Controls panel (which set the args) updates an
   // open graph; the panel's own controls change the state in between
@@ -177,8 +187,15 @@ const LineageView: React.FC<LineageGraphProps> = ({
   // Lays out again only when the nodes or edges change, not on hover
   const positions = useLayout(
     useMemo(
-      () => [...visible.ids].map((id) => ({ id, width: NODE_WIDTH, height: NODE_HEIGHT })),
-      [visible.ids],
+      () =>
+        [...visible.ids].map((id) => ({
+          id,
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+          // Grouped, each layer is a band of columns, left to right in its layer's order
+          ...(grouped && { partition: columnOf.get(nodesById.get(id)!.layer) }),
+        })),
+      [visible.ids, grouped, columnOf, nodesById],
     ),
     visible.edges,
     LAYOUT,
@@ -248,6 +265,35 @@ const LineageView: React.FC<LineageGraphProps> = ({
     });
   }, [positions, visible.ids, nodesById, layers, traced, hovered, focus, matches]);
 
+  // A header over each layer's band, all at one height above the graph
+  const headers: ColumnFlowNode[] = useMemo(() => {
+    if (!grouped || !positions) return [];
+    const bands = new Map<string, { left: number; right: number }>();
+    let top = Infinity;
+    for (const id of visible.ids) {
+      const position = positions.get(id);
+      const layer = nodesById.get(id)?.layer;
+      if (!position || !layer) continue;
+      top = Math.min(top, position.y);
+      const band = bands.get(layer) ?? { left: Infinity, right: -Infinity };
+      band.left = Math.min(band.left, position.x);
+      band.right = Math.max(band.right, position.x + NODE_WIDTH);
+      bands.set(layer, band);
+    }
+    return [...bands].map(([layer, { left, right }]) => ({
+      id: `column:${layer}`,
+      type: 'column',
+      position: { x: left, y: top - HEADER_HEIGHT - HEADER_GAP },
+      width: right - left,
+      height: HEADER_HEIGHT,
+      // Pans and zooms with the graph, but isn't something to hover or click
+      selectable: false,
+      focusable: false,
+      style: { pointerEvents: 'none' },
+      data: { layer: layers.get(layer)! },
+    }));
+  }, [grouped, positions, visible.ids, nodesById, layers]);
+
   const edges: Edge[] = useMemo(
     () =>
       visible.edges.map((e) => {
@@ -291,8 +337,8 @@ const LineageView: React.FC<LineageGraphProps> = ({
   return (
     // `data-ready` once the first layout is done, even an empty one, for tests to wait on
     <div className={styles.root} data-ready={positions ? '' : undefined}>
-      <ReactFlow
-        nodes={nodes}
+      <ReactFlow<LineageFlowNode | ColumnFlowNode>
+        nodes={[...headers, ...nodes]}
         edges={edges}
         nodeTypes={nodeTypes}
         nodesDraggable={false}
@@ -301,13 +347,15 @@ const LineageView: React.FC<LineageGraphProps> = ({
         minZoom={0.1}
         // Double-click opens a story, so it must not zoom
         zoomOnDoubleClick={false}
-        onNodeMouseEnter={(_, node) => setHovered(node.id)}
+        onNodeMouseEnter={(_, node) => node.type === 'lineage' && setHovered(node.id)}
         onNodeMouseLeave={() => setHovered(null)}
         onNodeClick={(_, node) => {
+          if (node.type !== 'lineage') return;
           clearTimeout(clickTimer.current);
           clickTimer.current = setTimeout(() => focusOn(node.id), DOUBLE_CLICK_MS);
         }}
         onNodeDoubleClick={(_, node) => {
+          if (node.type !== 'lineage') return;
           clearTimeout(clickTimer.current);
           openStory(nodesById.get(node.id));
         }}
@@ -315,10 +363,10 @@ const LineageView: React.FC<LineageGraphProps> = ({
       >
         <Background gap={24} />
         <Controls showInteractive={false} />
-        <MiniMap
+        <MiniMap<LineageFlowNode | ColumnFlowNode>
           pannable
           zoomable
-          nodeColor={(node) => (node as LineageFlowNode).data.layer.color}
+          nodeColor={(node) => (node.type === 'lineage' ? node.data.layer.color : 'transparent')}
           ariaLabel="Lineage overview"
         />
         <Panel position="top-left">
@@ -400,6 +448,14 @@ const LineageView: React.FC<LineageGraphProps> = ({
                 onChange={() => setHideUnlinked((current) => !current)}
               />
               Hide unconnected files
+            </label>
+            <label className={styles.layer}>
+              <input
+                type="checkbox"
+                checked={grouped}
+                onChange={() => setGrouped((current) => !current)}
+              />
+              Group by layer
             </label>
 
             <p className={styles.stats}>
@@ -555,7 +611,13 @@ const LineageNodeView: React.FC<NodeProps<LineageFlowNode>> = ({
   </div>
 );
 
-const nodeTypes = { lineage: LineageNodeView };
+const ColumnHeader: React.FC<NodeProps<ColumnFlowNode>> = ({ data: { layer } }) => (
+  <div className={styles.column} style={{ '--layer': layer.color } as React.CSSProperties}>
+    {layer.label}
+  </div>
+);
+
+const nodeTypes = { lineage: LineageNodeView, column: ColumnHeader };
 
 const DepthSelect: React.FC<{
   label: string;
