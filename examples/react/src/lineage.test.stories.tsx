@@ -286,3 +286,53 @@ export const CopyAsMermaid: Story = {
     }
   },
 };
+
+/**
+ * Grouped by layer, each layer is a band of columns under its header, in the layers' `column`
+ * order, even against an import: Link imports `format`, a utility, which goes left of it anyway.
+ */
+const banded: LineageGraphData = {
+  changedSince: null,
+  layers: [
+    { id: 'component', label: 'Components', color: '#2563eb', hidden: false, column: 1 },
+    { id: 'utility', label: 'Utilities', color: '#475569', hidden: false, column: 0 },
+  ],
+  nodes: [
+    { id: 'src/utils/merge.ts', label: 'merge', layer: 'utility' },
+    { id: 'src/utils/format.ts', label: 'format', layer: 'utility' },
+    { id: 'src/link.tsx', label: 'Link', layer: 'component' },
+    { id: 'src/page.tsx', label: 'Page', layer: 'component' },
+  ],
+  edges: [
+    { source: 'src/utils/merge.ts', target: 'src/link.tsx' },
+    { source: 'src/link.tsx', target: 'src/utils/format.ts' },
+    { source: 'src/link.tsx', target: 'src/page.tsx' },
+  ],
+};
+
+const left = (root: HTMLElement, id: string) => node(root, id)!.getBoundingClientRect().left;
+
+export const GroupByLayer: Story = {
+  args: { graph: banded },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await waitForNode(canvasElement, 'src/utils/format.ts');
+    await waitFor(() =>
+      expect(left(canvasElement, 'src/utils/format.ts')).toBeLessThan(
+        left(canvasElement, 'src/link.tsx'),
+      ),
+    );
+    await expect(node(canvasElement, 'column:utility')).toHaveTextContent('Utilities');
+    await expect(left(canvasElement, 'column:utility')).toBeLessThan(
+      left(canvasElement, 'column:component'),
+    );
+
+    // Ungrouped, `format` follows Link, which it imports
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'Group by layer' }));
+    await waitFor(() => expect(node(canvasElement, 'column:utility')).toBeNull());
+    await waitFor(() =>
+      expect(left(canvasElement, 'src/utils/format.ts')).toBeGreaterThan(
+        left(canvasElement, 'src/link.tsx'),
+      ),
+    );
+  },
+};
