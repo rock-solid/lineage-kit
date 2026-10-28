@@ -150,12 +150,26 @@ function reExports(file: string) {
     const match = rest.match(BARREL_STATEMENT);
     if (!match) return null;
     const [statement, , typeOnly, names, , module] = match;
-    // `export { type A, type B } from` is type-only too
-    const allTypes = names?.split(',').every((name) => /^\s*type\s/.test(name) || !name.trim());
+    // `export { type A, type B } from` is type-only too; `export {} from` still loads the module
+    const specifiers =
+      names
+        ?.split(',')
+        .map((name) => name.trim())
+        .filter(Boolean) ?? [];
+    const allTypes = specifiers.length > 0 && specifiers.every(isTypeSpecifier);
     if (module && !typeOnly && !allTypes) modules.add(module);
     rest = rest.slice(statement.length);
   }
   return modules;
+}
+
+/**
+ * Whether an export specifier is type-only: `type Foo` and `type Foo as Bar`, but not a value named
+ * `type` (`type`, `type as Foo`).
+ */
+function isTypeSpecifier(specifier: string) {
+  const words = specifier.split(/\s+/);
+  return words[0] === 'type' && words.length > 1 && !(words[1] === 'as' && words.length === 3);
 }
 
 /**

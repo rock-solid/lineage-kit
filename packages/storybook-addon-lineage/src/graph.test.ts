@@ -102,6 +102,15 @@ export { useState } from 'react';`,
   // Only types besides the file
   'src/ui/typed.ts': `export * from './button';
 export { type FC, type ReactNode } from 'react';`,
+  // Runtime re-exports that look like types: a value named `type`, renamed or not, and `export {}`,
+  // which still loads the module
+  'src/field.ts': `export const type = 'text';`,
+  'src/ui/named-type.ts': `export * from './button';
+export { type } from '../field';`,
+  'src/ui/renamed-type.ts': `export * from './button';
+export { type as FieldType } from '../field';`,
+  'src/ui/side-effect.ts': `export * from './button';
+export {} from '../field';`,
   // A loop: neither has a file to merge into
   'src/loop/a.ts': `export * as b from './b';`,
   'src/loop/b.ts': `export * as a from './a';`,
@@ -134,8 +143,18 @@ describe('barrels that stay nodes', () => {
     expect(ids).not.toContain('src/ui/typed.ts');
   });
 
+  it('keeps a barrel whose other re-export only looks type-only: a value named `type`, `export {}`', () => {
+    const ids = lookalikeGraph.nodes.map((n) => n.id);
+    expect(ids).toContain('src/ui/named-type.ts');
+    expect(ids).toContain('src/ui/renamed-type.ts');
+    expect(ids).toContain('src/ui/side-effect.ts');
+  });
+
   it('keeps a loop of barrels, with what imports it', () => {
-    const edges = lookalikeGraph.edges.map((e) => `${e.source} -> ${e.target}`).sort();
+    const edges = lookalikeGraph.edges
+      .map((e) => `${e.source} -> ${e.target}`)
+      .filter((e) => !/field|-type|side-effect/.test(e))
+      .sort();
     expect(edges).toEqual([
       'src/loop/a.ts -> src/loop/b.ts',
       'src/loop/a.ts -> src/pages/Icons.tsx',
