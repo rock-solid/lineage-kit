@@ -13,6 +13,10 @@ const STORY_FILE = /\.stories\.[jt]sx?$/;
 const CODE_FILE = /(?<!\.d)\.[cm]?[jt]sx?$/;
 const OTHER_LAYER = { id: 'other', label: 'Other', color: '#64748b', hidden: true };
 const DEFAULT_LAYERS = [{ id: 'files', label: 'Files', match: /./, color: '#2563eb' }];
+// A statement a barrel may hold: a directive, or `export * from`, `export * as x from`, `export { … } from`.
+// Groups: `type` before the names, the names in braces, the module re-exported.
+const BARREL_STATEMENT =
+  /^(?:(['"])use [\w ]+\1|export\s+(type\s+)?(?:\*(?:\s+as\s+[\w$]+)?|\{([^}]*)\})\s+from\s+(['"])([^'"]+)\4)\s*;?\s*/;
 
 /** Builds the import graph of `srcDir`, with each file assigned a layer and linked to its story. */
 export async function buildGraph(
@@ -36,15 +40,26 @@ export async function buildGraph(
     (m) => m.source.startsWith(`${srcDir}/`) && CODE_FILE.test(m.source),
   );
 
+  const code = modules.filter((m) => !STORY_FILE.test(m.source));
+  const merged = barrels(root, code);
+  const resolve = (id: string) => {
+    while (merged.has(id)) id = merged.get(id)!;
+    return id;
+  };
+
   const storyIds = new Map<string, string>();
   for (const m of modules) {
     if (!STORY_FILE.test(m.source)) continue;
     const story = storyTarget(root, m);
-    if (story && !storyIds.has(story.componentPath)) storyIds.set(story.componentPath, story.id);
+    if (!story) continue;
+    const componentPath = resolve(story.componentPath);
+    if (!storyIds.has(componentPath)) storyIds.set(componentPath, story.id);
   }
 
   const changes = changedFiles(root, options.baseBranch ?? 'main');
-  const files = modules.filter((m) => !STORY_FILE.test(m.source));
+  // A changed barrel marks the file it re-exports
+  const changed = new Set([...(changes?.files ?? [])].map(resolve));
+  const files = code.filter((m) => !merged.has(m.source));
   const ids = new Set(files.map((m) => m.source));
   const labels = uniqueLabels(files.map((m) => m.source));
 
@@ -53,7 +68,7 @@ export async function buildGraph(
     label: labels.get(m.source)!,
     layer: layerConfig.find((l) => l.match.test(m.source))?.id ?? OTHER_LAYER.id,
     ...(storyIds.has(m.source) && { storyId: storyIds.get(m.source) }),
-    ...(changes?.files.has(m.source) && { changed: true }),
+    ...(changed.has(m.source) && { changed: true }),
   }));
 
   // Files with no story of their own borrow one from their folder, preferring a file they import
@@ -61,23 +76,22 @@ export async function buildGraph(
     if (n.storyId) continue;
     const siblings = nodes.filter((o) => o.storyId && path.dirname(o.id) === path.dirname(n.id));
     const imported = new Set(
-      files.find((m) => m.source === n.id)?.dependencies.map((d) => d.resolved),
+      files.find((m) => m.source === n.id)?.dependencies.map((d) => resolve(d.resolved)),
     );
     const via = siblings.find((o) => imported.has(o.id)) ?? siblings[0];
     if (via) n.storyVia = { storyId: via.storyId!, label: via.label };
   }
 
-  const edges: LineageEdge[] = files.flatMap((m) =>
-    m.dependencies
-      // Type-only imports don't render anything, so they aren't lineage
-      .filter(
-        (d) =>
-          ids.has(d.resolved) &&
-          d.resolved !== m.source &&
-          !d.dependencyTypes.includes('type-only'),
-      )
-      .map((d) => ({ source: d.resolved, target: m.source })),
-  );
+  const edges: LineageEdge[] = files.flatMap((m) => {
+    const sources = new Set(
+      m.dependencies
+        // Type-only imports don't render anything, so they aren't lineage
+        .filter((d) => !d.dependencyTypes.includes('type-only'))
+        .map((d) => resolve(d.resolved))
+        .filter((source) => ids.has(source) && source !== m.source),
+    );
+    return [...sources].map((source) => ({ source, target: m.source }));
+  });
 
   const configured = nodes.some((n) => n.layer === OTHER_LAYER.id)
     ? [...layerConfig, OTHER_LAYER]
@@ -94,6 +108,77 @@ export async function buildGraph(
   }));
 
   return { layers, nodes, edges, changedSince: changes?.base ?? null };
+}
+
+/**
+ * Barrels to merge into the one file they re-export, so `ui/button/index.ts` with
+ * `export * from './button'` isn't a second `button` node: its importers link to `button.tsx`.
+ * A barrel that also re-exports anything else (another file, a package, an excluded file) stays a
+ * node, since which of them an importer uses isn't known; so does a loop of barrels, which has no
+ * file to merge into.
+ */
+function barrels(root: string, files: IModule[]) {
+  const ids = new Set(files.map((m) => m.source));
+  const merged = new Map<string, string>();
+  for (const m of files) {
+    // Counted from the source, since packages and excluded files aren't nodes to count
+    const modules = reExports(path.join(root, m.source));
+    if (modules?.size !== 1) continue;
+    const [module] = modules;
+    const target = m.dependencies.find((d) => d.module === module)?.resolved;
+    if (target && ids.has(target)) merged.set(m.source, target);
+  }
+
+  for (const start of [...merged.keys()]) {
+    const seen = new Set<string>();
+    let id = start;
+    while (merged.has(id) && !seen.has(id)) {
+      seen.add(id);
+      id = merged.get(id)!;
+    }
+    if (!seen.has(id)) continue;
+    // `id` is on a loop: every barrel around it stays a node
+    const loop = [id];
+    for (let next = merged.get(id)!; next !== id; next = merged.get(next)!) loop.push(next);
+    for (const barrel of loop) merged.delete(barrel);
+  }
+  return merged;
+}
+
+/**
+ * The modules a file of nothing but re-exports (and comments or directives) re-exports at runtime,
+ * leaving out `export type`; `null` for any other file.
+ */
+function reExports(file: string) {
+  let rest = readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+    .trim();
+  if (!rest) return null;
+  const modules = new Set<string>();
+  while (rest) {
+    const match = rest.match(BARREL_STATEMENT);
+    if (!match) return null;
+    const [statement, , typeOnly, names, , module] = match;
+    // `export { type A, type B } from` is type-only too; `export {} from` still loads the module
+    const specifiers =
+      names
+        ?.split(',')
+        .map((name) => name.trim())
+        .filter(Boolean) ?? [];
+    const allTypes = specifiers.length > 0 && specifiers.every(isTypeSpecifier);
+    if (module && !typeOnly && !allTypes) modules.add(module);
+    rest = rest.slice(statement.length);
+  }
+  return modules;
+}
+
+/**
+ * Whether an export specifier is type-only: `type Foo` and `type Foo as Bar`, but not a value named
+ * `type` (`type`, `type as Foo`).
+ */
+function isTypeSpecifier(specifier: string) {
+  const words = specifier.split(/\s+/);
+  return words[0] === 'type' && words.length > 1 && !(words[1] === 'as' && words.length === 3);
 }
 
 /**

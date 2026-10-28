@@ -69,8 +69,9 @@ What the design doesn't cover. Some are on the roadmap, others are trade-offs.
 
 - **Storybook 10 on Vite with React** (`react-vite`, `nextjs-vite`). The graph is served by a Vite
   plugin and the page is a React story, so webpack builders and other renderers aren't supported.
-- **Files, not components.** A file that exports several components is one node; barrel files
-  (`index.ts` re-exports) add a hop.
+- **Files, not components.** A file that exports several components is one node. A barrel over
+  several files (`components/index.ts` re-exporting them all) is a node too, and links everything that
+  imports it to all of them; barrels over a single file merge into it.
 - **Static imports only.** Imports built at runtime (``import(`./${name}`)``), and links that live in
   data, such as a CMS block's slug mapped to its component, aren't edges.
 - **Type-only imports aren't edges,** on purpose: they don't render anything.
