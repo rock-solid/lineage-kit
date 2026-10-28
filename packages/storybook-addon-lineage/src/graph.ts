@@ -5,6 +5,7 @@ import { cruise, type ICruiseResult, type IModule } from 'dependency-cruiser';
 import extractTSConfig from 'dependency-cruiser/config-utl/extract-ts-config';
 import { toId } from 'storybook/internal/csf';
 
+import { layerColumns } from './columns';
 import type { LineageEdge, LineageGraph, LineageNode, LineageOptions } from './types';
 
 const STORY_FILE = /\.stories\.[jt]sx?$/;
@@ -78,11 +79,19 @@ export async function buildGraph(
       .map((d) => ({ source: d.resolved, target: m.source })),
   );
 
-  const layers = layerConfig.map(({ match: _match, hidden, ...layer }) => ({
-    ...layer,
+  const configured = nodes.some((n) => n.layer === OTHER_LAYER.id)
+    ? [...layerConfig, OTHER_LAYER]
+    : layerConfig;
+  // Hidden layers count too, so switching one on doesn't move the others
+  const layerOf = new Map(nodes.map((n) => [n.id, n.layer]));
+  const columns = layerColumns(configured, (file) => layerOf.get(file), edges);
+  const layers = configured.map(({ hidden, ...layer }) => ({
+    id: layer.id,
+    label: layer.label,
+    color: layer.color,
     hidden: !!hidden,
+    column: columns.get(layer.id)!,
   }));
-  if (nodes.some((n) => n.layer === OTHER_LAYER.id)) layers.push(OTHER_LAYER);
 
   return { layers, nodes, edges, changedSince: changes?.base ?? null };
 }

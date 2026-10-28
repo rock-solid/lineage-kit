@@ -8,6 +8,12 @@ export type LayerConfig = {
   color: string;
   /** Hidden until switched on in the viewer, for layers that crowd the graph (utilities, config). */
   hidden?: boolean;
+  /**
+   * Where the layer's column goes when the graph is grouped by layer, from 0 on the left. Without
+   * one, columns follow the imports between layers; a layer with one goes in at that position, and
+   * the rest keep their order around it.
+   */
+  column?: number;
 };
 
 /** The addon's options, set in `.storybook/main.ts`: `{ name: '@rocksoliddigital/storybook-addon-lineage', options }`. */
@@ -24,7 +30,14 @@ export type LineageOptions = {
   layers?: LayerConfig[];
 };
 
-export type LineageLayer = Omit<LayerConfig, 'match' | 'hidden'> & { hidden: boolean };
+export type LineageLayer = Omit<LayerConfig, 'match' | 'hidden' | 'column'> & {
+  hidden: boolean;
+  /**
+   * Its column, left to right from 0, when the graph is grouped by layer. Without one, as in a graph
+   * built by hand, the listed order is used.
+   */
+  column?: number;
+};
 
 export type LineageNode = {
   /** File path from the project root. */

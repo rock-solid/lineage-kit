@@ -2,7 +2,17 @@ import ELK from 'elkjs/lib/elk.bundled.js';
 
 import type { Link } from './traverse';
 
-export type LayoutNode = { id: string; width: number; height: number };
+export type LayoutNode = {
+  id: string;
+  width: number;
+  height: number;
+  /**
+   * Column group: every node of a lower partition is left of every node of a higher one, so a group
+   * such as a layer of files reads as a band. Nodes without one are free, and when no node has one
+   * the layout is unconstrained.
+   */
+  partition?: number;
+};
 
 export type LayoutEdge = Link & {
   /**
@@ -25,13 +35,15 @@ export type Positions = Map<string, { x: number; y: number }>;
 
 /**
  * The ELK graph for a left-to-right layered layout. Links from a node to itself are left out: a
- * caller shows those on the node.
+ * caller shows those on the node. With partitions, connected components are laid out together, or
+ * ELK would place a file with no links in its own component, outside its band.
  */
 export function layoutInput(
   nodes: readonly LayoutNode[],
   edges: readonly LayoutEdge[],
   { layerSpacing, nodeSpacing, placement }: LayoutOptions,
 ) {
+  const partitioned = nodes.some((n) => n.partition !== undefined);
   return {
     id: 'root',
     layoutOptions: {
@@ -40,8 +52,19 @@ export function layoutInput(
       'elk.layered.spacing.nodeNodeBetweenLayers': String(layerSpacing),
       'elk.spacing.nodeNode': String(nodeSpacing),
       'elk.layered.nodePlacement.strategy': placement,
+      ...(partitioned && {
+        'elk.partitioning.activate': 'true',
+        'elk.separateConnectedComponents': 'false',
+      }),
     },
-    children: nodes.map(({ id, width, height }) => ({ id, width, height })),
+    children: nodes.map(({ id, width, height, partition }) => ({
+      id,
+      width,
+      height,
+      ...(partition !== undefined && {
+        layoutOptions: { 'elk.partitioning.partition': String(partition) },
+      }),
+    })),
     edges: edges
       .filter((e) => e.source !== e.target)
       .map((e, i) => ({
@@ -80,7 +103,10 @@ export function layoutKey(
 ) {
   return [
     nodes
-      .map((n) => `${n.id}:${n.width}x${n.height}`)
+      .map(
+        (n) =>
+          `${n.id}:${n.width}x${n.height}${n.partition === undefined ? '' : `@${n.partition}`}`,
+      )
       .sort()
       .join('|'),
     edges

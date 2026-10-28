@@ -170,6 +170,21 @@
   border-color: var(--lineage-muted);
 }
 
+/* Column headers, one per layer when grouped */
+
+.lk-column {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding-bottom: 4px;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--lineage-text);
+  border-bottom: 3px solid var(--layer);
+}
+
 /* Nodes */
 
 .lk-node {
