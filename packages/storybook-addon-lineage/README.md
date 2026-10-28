@@ -123,13 +123,17 @@ write.
 - A story links to the file its `component` is imported from, so `Grid.stories.tsx` with
   `component: GridBlock` from `./Component` links to `Component.tsx`. A file without a story of its
   own borrows one from its folder ("story via View"); the rest show "no story".
+- A barrel that re-exports a single file, such as `ui/button/index.ts` with `export * from './button'`,
+  isn't a node of its own: what imports it links to `button.tsx`. A barrel over several files stays a
+  node, since which of them an importer uses isn't known.
 - Changed files are the diff from the merge base with the base branch to the working tree, plus
   untracked files. Without that branch, as in a shallow CI clone, the toggle is off.
 
 ## 🚧 Limits
 
 - Storybook 10 on Vite with React only.
-- One node per file, from static imports. Type-only imports aren't edges.
+- One node per file, from static imports, except barrels over a single file. Type-only imports aren't
+  edges.
 - Story titles and `component` must be written as literals for a story to link.
 
 Known issues, the full list of limitations, and what's planned:
