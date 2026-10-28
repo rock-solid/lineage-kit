@@ -1,6 +1,6 @@
 {
   "name": "@rocksoliddigital/payload-lineage",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Lineage and data model (ERD) pages for the Payload admin: the collections, globals and blocks, and the fields that link them.",
   "keywords": [
     "payload",
