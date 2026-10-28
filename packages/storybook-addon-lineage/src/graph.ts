@@ -12,9 +12,10 @@ const STORY_FILE = /\.stories\.[jt]sx?$/;
 const CODE_FILE = /(?<!\.d)\.[cm]?[jt]sx?$/;
 const OTHER_LAYER = { id: 'other', label: 'Other', color: '#64748b', hidden: true };
 const DEFAULT_LAYERS = [{ id: 'files', label: 'Files', match: /./, color: '#2563eb' }];
-// A statement a barrel may hold: a directive, or `export * from`, `export * as x from`, `export { … } from`
+// A statement a barrel may hold: a directive, or `export * from`, `export * as x from`, `export { … } from`.
+// Groups: `type` before the names, the names in braces, the module re-exported.
 const BARREL_STATEMENT =
-  /^(?:(['"])use [\w ]+\1|export\s+(?:type\s+)?(?:\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s+from\s+(['"])[^'"]+\2)\s*;?\s*/;
+  /^(?:(['"])use [\w ]+\1|export\s+(type\s+)?(?:\*(?:\s+as\s+[\w$]+)?|\{([^}]*)\})\s+from\s+(['"])([^'"]+)\4)\s*;?\s*/;
 
 /** Builds the import graph of `srcDir`, with each file assigned a layer and linked to its story. */
 export async function buildGraph(
@@ -41,7 +42,7 @@ export async function buildGraph(
   const code = modules.filter((m) => !STORY_FILE.test(m.source));
   const merged = barrels(root, code);
   const resolve = (id: string) => {
-    for (let hops = 0; merged.has(id) && hops < merged.size; hops++) id = merged.get(id)!;
+    while (merged.has(id)) id = merged.get(id)!;
     return id;
   };
 
@@ -103,35 +104,58 @@ export async function buildGraph(
 /**
  * Barrels to merge into the one file they re-export, so `ui/button/index.ts` with
  * `export * from './button'` isn't a second `button` node: its importers link to `button.tsx`.
- * A barrel over several files stays a node, since which of them an importer uses isn't known.
+ * A barrel that also re-exports anything else (another file, a package, an excluded file) stays a
+ * node, since which of them an importer uses isn't known; so does a loop of barrels, which has no
+ * file to merge into.
  */
 function barrels(root: string, files: IModule[]) {
   const ids = new Set(files.map((m) => m.source));
   const merged = new Map<string, string>();
   for (const m of files) {
-    if (!isBarrel(path.join(root, m.source))) continue;
-    const targets = new Set(
-      m.dependencies
-        .filter((d) => ids.has(d.resolved) && !d.dependencyTypes.includes('type-only'))
-        .map((d) => d.resolved),
-    );
-    if (targets.size === 1) merged.set(m.source, [...targets][0]);
+    // Counted from the source, since packages and excluded files aren't nodes to count
+    const modules = reExports(path.join(root, m.source));
+    if (modules?.size !== 1) continue;
+    const [module] = modules;
+    const target = m.dependencies.find((d) => d.module === module)?.resolved;
+    if (target && ids.has(target)) merged.set(m.source, target);
+  }
+
+  for (const start of [...merged.keys()]) {
+    const seen = new Set<string>();
+    let id = start;
+    while (merged.has(id) && !seen.has(id)) {
+      seen.add(id);
+      id = merged.get(id)!;
+    }
+    if (!seen.has(id)) continue;
+    // `id` is on a loop: every barrel around it stays a node
+    const loop = [id];
+    for (let next = merged.get(id)!; next !== id; next = merged.get(next)!) loop.push(next);
+    for (const barrel of loop) merged.delete(barrel);
   }
   return merged;
 }
 
-/** A file of nothing but re-exports (and comments or directives). */
-function isBarrel(file: string) {
+/**
+ * The modules a file of nothing but re-exports (and comments or directives) re-exports at runtime,
+ * leaving out `export type`; `null` for any other file.
+ */
+function reExports(file: string) {
   let rest = readFileSync(file, 'utf8')
     .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
     .trim();
-  if (!rest) return false;
+  if (!rest) return null;
+  const modules = new Set<string>();
   while (rest) {
-    const statement = rest.match(BARREL_STATEMENT)?.[0];
-    if (!statement) return false;
+    const match = rest.match(BARREL_STATEMENT);
+    if (!match) return null;
+    const [statement, , typeOnly, names, , module] = match;
+    // `export { type A, type B } from` is type-only too
+    const allTypes = names?.split(',').every((name) => /^\s*type\s/.test(name) || !name.trim());
+    if (module && !typeOnly && !allTypes) modules.add(module);
     rest = rest.slice(statement.length);
   }
-  return true;
+  return modules;
 }
 
 /**

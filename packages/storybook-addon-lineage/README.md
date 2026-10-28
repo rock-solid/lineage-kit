@@ -124,8 +124,9 @@ write.
   `component: GridBlock` from `./Component` links to `Component.tsx`. A file without a story of its
   own borrows one from its folder ("story via View"); the rest show "no story".
 - A barrel that re-exports a single file, such as `ui/button/index.ts` with `export * from './button'`,
-  isn't a node of its own: what imports it links to `button.tsx`. A barrel over several files stays a
-  node, since which of them an importer uses isn't known.
+  isn't a node of its own: what imports it links to `button.tsx`. A barrel that also re-exports
+  anything else, such as another file or a package, stays a node, since which of them an importer
+  uses isn't known.
 - Changed files are the diff from the merge base with the base branch to the working tree, plus
   untracked files. Without that branch, as in a shallow CI clone, the toggle is off.
 
