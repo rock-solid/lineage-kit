@@ -34,9 +34,15 @@ describe('layerColumns', () => {
   });
 
   it('keeps the order with fewer imports running backwards when layers import each other', () => {
-    // A page imported by one component: 1 import back against the 2 forwards
-    const withCycle = [...edges, { source: 'home.tsx', target: 'hero.tsx' }];
-    expect(order(layerColumns(layers, (f) => files[f], withCycle))).toEqual([
+    // Components import pages twice and pages import a component once; pages listed first, so only
+    // the counts put components first
+    const withCycle = [
+      ...edges,
+      { source: 'hero.tsx', target: 'about.tsx' },
+      { source: 'home.tsx', target: 'hero.tsx' },
+    ];
+    const pagesFirst = [layers[0], layers[2], layers[1], layers[3]];
+    expect(order(layerColumns(pagesFirst, (f) => files[f], withCycle))).toEqual([
       'utility',
       'primitive',
       'component',
