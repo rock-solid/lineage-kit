@@ -30,6 +30,29 @@ describe('lineagePlugin', () => {
     });
   });
 
+  it('writes the snapshot of the sanitized config on init with snapshot', async () => {
+    const dir = path.join(await mkdtemp(path.join(tmpdir(), 'lineage-')), 'lineage');
+    const result = await lineagePlugin({ snapshot: { dir } })(config);
+    expect(result.custom?.lineage).toMatchObject({ snapshot: { dir, baseBranch: 'main' } });
+
+    await result.onInit!(payload({ collections: [{ slug: 'forms', fields: [] }] }));
+
+    const read = async (file: string) => JSON.parse(await readFile(path.join(dir, file), 'utf8'));
+    expect((await read('graph.json')).nodes).toHaveLength(1);
+    expect((await read('schema.json')).entities[0]).toMatchObject({ id: 'collection:forms' });
+  });
+
+  it('turns the snapshot off in production, for the pages too', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      const result = await lineagePlugin({ snapshot: true })(config);
+      expect(result.onInit).toBeUndefined();
+      expect(result.custom?.lineage).not.toHaveProperty('snapshot.dir');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('leaves the config alone when disabled', async () => {
     expect(await lineagePlugin({ outputFile: 'x.json', enabled: false })(config)).toBe(config);
   });

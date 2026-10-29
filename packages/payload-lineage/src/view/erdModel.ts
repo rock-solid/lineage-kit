@@ -2,7 +2,8 @@
 
 import type { LayoutOptions } from '@rocksoliddigital/lineage-core';
 
-import type { Schema, SchemaEntity, SchemaField, SchemaRelation } from '../schema';
+import type { Change, DiffedEntity, DiffedField, DiffedSchema, WithChange } from '../diff';
+import type { SchemaEntity, SchemaField, SchemaRelation } from '../schema';
 
 export const TABLE_WIDTH = 260;
 export const HEADER_HEIGHT = 44;
@@ -26,7 +27,9 @@ export type ErdEdge = {
   to: string;
   /** The loosest of its relations: any list makes it many-to-many. */
   cardinality: Cardinality;
-  relations: SchemaRelation[];
+  relations: WithChange<SchemaRelation>[];
+  /** Deleted or added when all its relations are, changed when any one is. */
+  change?: Change;
 };
 
 export function cardinalityOf(relation: SchemaRelation): Cardinality {
@@ -62,7 +65,7 @@ export function describeCardinality(
   return `Each ${from.singular} references many ${to.label}; a ${to.singular} can be referenced by many ${from.label}.`;
 }
 
-export function erdEdges(relations: readonly SchemaRelation[]): ErdEdge[] {
+export function erdEdges(relations: readonly WithChange<SchemaRelation>[]): ErdEdge[] {
   const edges = new Map<string, ErdEdge>();
   for (const r of relations) {
     // A table pointing at itself is marked on the row, not drawn as a loop
@@ -81,7 +84,24 @@ export function erdEdges(relations: readonly SchemaRelation[]): ErdEdge[] {
     if (LOOSENESS.indexOf(own) > LOOSENESS.indexOf(edge.cardinality)) edge.cardinality = own;
     edges.set(id, edge);
   }
+  for (const edge of edges.values()) {
+    const changes = new Set(edge.relations.map((r) => r.change));
+    if (changes.size === 1 && (changes.has('added') || changes.has('deleted'))) {
+      edge.change = edge.relations[0].change;
+    } else if (changes.size > 1 || changes.has('changed')) edge.change = 'changed';
+  }
   return [...edges.values()];
+}
+
+/**
+ * What "Changed since main" shows: the tables that changed, and the tables that reference them
+ * directly, whose documents point at what changed.
+ */
+export function changedTables(schema: DiffedSchema): Set<string> {
+  const changed = new Set(schema.entities.filter((e) => e.change).map((e) => e.id));
+  const shown = new Set(changed);
+  for (const r of schema.relations) if (changed.has(r.to)) shown.add(r.from);
+  return shown;
 }
 
 /** The rows of a row-holding entity that point back at it, e.g. nested docs' `parent`. */
@@ -95,13 +115,14 @@ export type RowFilter = { keysOnly: boolean; expanded: boolean };
 
 /**
  * The rows a table shows: with `keysOnly`, the id and the rows with relations; otherwise every row,
- * cut to `ROW_LIMIT` unless expanded, keeping the rows with relations either way.
+ * cut to `ROW_LIMIT` unless expanded, keeping the rows with relations, and the rows that changed,
+ * either way.
  */
 export function visibleRows(
-  entity: SchemaEntity,
+  entity: DiffedEntity,
   relations: readonly SchemaRelation[],
   { keysOnly, expanded }: RowFilter,
-): { rows: SchemaField[]; hidden: number } {
+): { rows: DiffedField[]; hidden: number } {
   const linked = new Set(relations.filter((r) => r.from === entity.id).map((r) => r.field));
   // `id` by name too, for a collection that defines its own (`type: 'text'`)
   const isKey = (f: SchemaField) =>
@@ -111,9 +132,9 @@ export function visibleRows(
     return { rows, hidden: entity.fields.length - rows.length };
   }
   if (expanded || entity.fields.length <= ROW_LIMIT) return { rows: entity.fields, hidden: 0 };
-  const keys = entity.fields.filter(isKey).length;
-  let budget = Math.max(ROW_LIMIT - keys, 0);
-  const rows = entity.fields.filter((f) => isKey(f) || budget-- > 0);
+  const kept = (f: DiffedField) => isKey(f) || !!f.change;
+  let budget = Math.max(ROW_LIMIT - entity.fields.filter(kept).length, 0);
+  const rows = entity.fields.filter((f) => kept(f) || budget-- > 0);
   return { rows, hidden: entity.fields.length - rows.length };
 }
 
@@ -134,22 +155,28 @@ export const ERD_LAYOUT: LayoutOptions = {
  * reach the browser.
  */
 export function schemaForViewer(
-  schema: Schema,
-  canRead: (entity: SchemaEntity) => boolean,
-): Schema {
+  schema: DiffedSchema,
+  canRead: (entity: DiffedEntity) => boolean,
+): DiffedSchema {
   const readable = schema.entities.filter(canRead);
   const ids = new Set(readable.map((e) => e.id));
   const entities = readable.map((entity) => ({
     ...entity,
-    fields: entity.fields.map((field) => {
-      if (!field.relationTo) return field;
-      const { relationTo, ...rest } = field;
-      const visible = relationTo.filter((slug) => ids.has(`collection:${slug}`));
-      return visible.length ? { ...rest, relationTo: visible } : rest;
-    }),
+    fields: entity.fields.map(({ before, ...field }) => ({
+      ...readableTargets(field, ids),
+      // What a changed field was can name a collection the viewer can't read too
+      ...(before && { before: readableTargets(before, ids) }),
+    })),
   }));
   return {
     entities,
     relations: schema.relations.filter((r) => ids.has(r.from) && ids.has(r.to)),
   };
+}
+
+function readableTargets<F extends SchemaField>(field: F, ids: ReadonlySet<string>): F {
+  if (!field.relationTo) return field;
+  const { relationTo, ...rest } = field;
+  const visible = relationTo.filter((slug) => ids.has(`collection:${slug}`));
+  return (visible.length ? { ...rest, relationTo: visible } : rest) as F;
 }
